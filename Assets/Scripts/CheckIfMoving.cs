@@ -28,7 +28,7 @@ public class CheckIfMoving : MonoBehaviour
         {
             isMoving = false;
             c.Triangulate(c.sceneName);
-            timer = 4f;
+            timer = 3f;
         }
         lastUpdatePos = p.transform.position;
     }

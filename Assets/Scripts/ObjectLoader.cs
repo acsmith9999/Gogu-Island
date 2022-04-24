@@ -1,4 +1,5 @@
 using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,57 +9,43 @@ public class ObjectLoader : MonoBehaviour
 
     public Dictionary<int, Locations> locationsDict;
 
-    public string terrainName, fileToLoad;
-
-    public bool inRange = false;
+    public string fileToLoad;
+    public List<string> sequencesToLoad;
+    private string[] s;
 
     private LevelController levelController;
 
-    private void Awake()
-    {
-
-    }
-    // Start is called before the first frame update
+    
     void Start()
     {
         levelController = FindObjectOfType<LevelController>();
-        //if (locationsList.Count == 0)
-        //{
-            AddObjectsToLists();
-        //}
+        GetSequences();
+        //AddObjectsToLists();
     }
+    public void GetSequences()
+    {
+        sequencesToLoad = new List<string>();
+        ObjectDictionary dictionary = JsonUtility.FromJson<ObjectDictionary>(JsonFileReader.LoadJsonAsResource("Locations/Sequences.json"));
+        foreach (string dictionaryItem in dictionary.locations)
+        {
+            sequencesToLoad.Add(dictionaryItem);
+        }
 
-    //private void OnTriggerEnter(Collider other)
-    //{
-    //    if (locationsList.Count == 0)
-    //    {
-    //        AddObjectsToLists();
-    //    }
-    //    inRange = true;
-    //    levelController.directionsText.enabled = true;
-    //    levelController.directionsText.text = terrainName;
+        if (MainMenu.startGeo)
+        {
+            fileToLoad = sequencesToLoad.Find(x => x.Contains("LandSea"));
+        }
+        else if(!MainMenu.startGeo) 
+        { 
+            fileToLoad = sequencesToLoad.Find(x => x.Contains("CoastUpDown")); 
+        }
+        levelController.axis = fileToLoad;
 
-    //}
-
-    //private void OnTriggerExit(Collider other)
-    //{
-    //    foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
-    //    {
-    //        Destroy(g);
-    //    }
-    //    locationsList.Clear();
-    //    locationsDict.Clear();
-    //    inRange = false;
-    //    levelController.directionsText.enabled = false;
-    //    levelController.locationsList = locationsList;
-    //    levelController.timer = false;
-    //    levelController.elapsedTime = 0;
-    //}
-
+    }
     public void AddObjectsToLists()
     {
         locationsDict = new Dictionary<int, Locations>();
-        ObjectDictionary dictionary = JsonUtility.FromJson<ObjectDictionary>(JsonFileReader.LoadJsonAsResource("Locations/" + fileToLoad + ".json"));
+        ObjectDictionary dictionary = JsonUtility.FromJson<ObjectDictionary>(JsonFileReader.LoadJsonAsResource(fileToLoad));
         foreach (string dictionaryItem in dictionary.locations)
         {
             LoadObject(dictionaryItem);
@@ -69,6 +56,14 @@ public class ObjectLoader : MonoBehaviour
             locationsList.Add(temp);
         }
         levelController.locationsList = locationsList;
+        sequencesToLoad.Remove(fileToLoad);
+        s = sequencesToLoad.ToArray();
+        if (s.Length != 0)
+        {
+            fileToLoad = s[0];
+        }
+        
+        
     }
 
     public void LoadObject(string path)

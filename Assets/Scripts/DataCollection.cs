@@ -2,18 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class DataCollection : List<TrialData>
 {
     List<TrialData> participantData;
-    // Start is called before the first frame update
-    void Start()
+    public DataCollection()
     {
-        
+
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

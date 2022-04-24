@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
+using UnityEngine.SceneManagement;
+using PixelCrushers.DialogueSystem;
 
 public class LevelController : MonoBehaviour
 {
@@ -12,14 +14,19 @@ public class LevelController : MonoBehaviour
 
     public bool timer = false;
     public float elapsedTime;
+    public float trialTime;
 
     private ObjectLoader objectLoader;
     private CalculateDirection calculateDirection;
     public List<Locations> locationsList;
 
-    public int trialNumber = 0;
+    public int trialNumber = 1;
+    public int sequencesCompleted = 0;
+    public bool geoFirstSeq;
 
-    [SerializeField]
+    public string axis;
+
+    //export this
     public DataCollection trialDatas;
 
     // Start is called before the first frame update
@@ -29,16 +36,18 @@ public class LevelController : MonoBehaviour
         calculateDirection = FindObjectOfType<CalculateDirection>();
         trialDatas = new DataCollection();
         elapsedTime = 0;
+        trialTime = 0;
+        geoFirstSeq = MainMenu.startGeo;
     }
 
     // Update is called once per frame
     void Update()
     {
 
-        //if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
-        //{
-        //    SpawnPickup();
-        //}
+        if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
+        {
+            SpawnPickup();
+        }
 
         //maybe delete
         if (Input.GetKeyDown(KeyCode.Backspace))
@@ -54,35 +63,62 @@ public class LevelController : MonoBehaviour
             // The only way at the moment to repopulate the items is by leaving the trigger area
             directionsText.enabled = false;
             timer = false;
-            elapsedTime = 0;
+            //elapsedTime = 0;
         }
 
         if (timer)
         {
             elapsedTime += Time.deltaTime;
+            trialTime += Time.deltaTime;
+        }
+        //if (Input.GetKeyDown(KeyCode.O))
+        //{
+        //    WinGame();
+        //}
+
+    }
+    private void LateUpdate()
+    {
+        if (trialTime >= 20)
+        {
+            GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
         }
     }
-
     public void SpawnPickup() {
-        timer = true;
+        if (locationsList.Count > 0)
+        {
+            trialTime = 0;
+            timer = true;
 
-        trialNumber++;
+            trialNumber++;
 
-        int index = Random.Range(1, locationsList.Count);
-        calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(index).location, Quaternion.identity);
-        calculateDirection.targetRef = calculateDirection.target.transform.position;
-        directionsText.text = "";
-        directionsText.enabled = true;
+            int index = Random.Range(0, locationsList.Count);
+            calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(index).location, Quaternion.identity);
+            
+            calculateDirection.targetRef = calculateDirection.target.transform.position;
+            directionsText.text = "";
+            directionsText.enabled = true;
 
-        //directionsText.enabled = true;
-        //directionsText.text = locationsList.ElementAt(index).description;
+            //directionsText.enabled = true;
+            //directionsText.text = locationsList.ElementAt(index).description;
 
-        locationsList.RemoveAt(index);
-        
+            locationsList.RemoveAt(index);
+        }
+        else { Debug.Log("No more locations to spawn"); }
     }
 
     public void SpawnExample()
     {
-        Instantiate(pickup, locationsList.ElementAt(0).location, Quaternion.identity);
+        Instantiate(pickup, new Vector3(391.8f, 33.43f, 488.1f), Quaternion.identity);
+    }
+    //public void WinGame()
+    //{
+    //    FindObjectOfType<FadeInOut>().FadeToLevel("EndScene");
+    //}
+    public void LoadNextSequence()
+    {
+        DialogueLua.SetVariable("GameFinished", true);
+        trialNumber = 0;
+        axis = objectLoader.fileToLoad;
     }
 }
