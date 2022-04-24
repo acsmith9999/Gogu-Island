@@ -63,19 +63,7 @@ public class CalculateDirection : MonoBehaviour
             towardsAbs = sm.baki;
             awayAbs = sm.bago;
         }
-        //if (sceneName == "Hill")
-        //{
-        //    isSlope = true;
-        //}
-        //else if (sceneName == "RoundCoast" || sceneName == "StraightCoast")
-        //{
-        //    isCoast = true;
-        //    inlandAnchor = GameObject.Find("inland");
-        //    inlandtoV2 = new Vector2(inlandAnchor.transform.position.x, inlandAnchor.transform.position.z);
-        //}
-        //else if(sceneName == "Flat River"){
-        //    isRiver = true;
-        //}
+
     }
 
     public void Triangulate(string sceneName)
@@ -159,24 +147,38 @@ public class CalculateDirection : MonoBehaviour
         float rad = Mathf.Acos(cAngSun);
         angle = Mathf.Rad2Deg * rad; //this is the up/down angle
 
-        //if (inlandToPlayer < inlandToTarget)
-        //{
-
-        //    //directionText.text = across1;
-        //    src.PlayOneShot(towardsAudio);
-        //    givenDirection = towardsAudio.name;
-        //}
-        //else if (inlandToPlayer > inlandToTarget)
-        //{
-        //    //directionText.text = across2;
-        //    src.PlayOneShot(awayAudio);
-        //    givenDirection = awayAudio.name;
-        //}
+        if (l.axis.Contains("Land"))
+        {
+            if (inlandToPlayer < inlandToTarget)
+            {
+                src.PlayOneShot(towardsGeo);
+                givenDirection = towardsGeo.name;
+            }
+            else if (inlandToPlayer > inlandToTarget)
+            {
+                src.PlayOneShot(awayGeo);
+                givenDirection = awayGeo.name;
+            }
+        }
+        else if (l.axis.Contains("Coast"))
+        {
+            if (angle <= 90)
+            {
+                src.PlayOneShot(towardsAbs);
+                givenDirection = towardsAbs.name;
+            }
+            else if (angle > 90)
+            {
+                src.PlayOneShot(awayAbs);
+                givenDirection = awayAbs.name;
+            }
+        }
 
         GameDirection temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
         gameDirections.Add(temp);
 
     }
+
     //Method compares two axes
     public void TriangulateRoundCoast()
     {

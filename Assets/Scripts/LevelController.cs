@@ -79,7 +79,7 @@ public class LevelController : MonoBehaviour
     }
     private void LateUpdate()
     {
-        if (trialTime >= 20)
+        if (trialTime >= 200)
         {
             GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
         }
@@ -117,7 +117,9 @@ public class LevelController : MonoBehaviour
     //}
     public void LoadNextSequence()
     {
+        PixelCrushers.DialogueSystem.DialogueManager.StartConversation("RobOnSequenceEnd");
         DialogueLua.SetVariable("GameFinished", true);
+
         trialNumber = 0;
         axis = objectLoader.fileToLoad;
     }
