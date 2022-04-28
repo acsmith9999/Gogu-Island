@@ -1,5 +1,3 @@
-using System.Collections;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,7 +18,6 @@ public class ObjectLoader : MonoBehaviour
     {
         levelController = FindObjectOfType<LevelController>();
         GetSequences();
-        //AddObjectsToLists();
     }
     public void GetSequences()
     {
@@ -30,7 +27,6 @@ public class ObjectLoader : MonoBehaviour
         {
             sequencesToLoad.Add(dictionaryItem);
         }
-
         if (MainMenu.startGeo)
         {
             fileToLoad = sequencesToLoad.Find(x => x.Contains("LandSea"));
@@ -40,7 +36,6 @@ public class ObjectLoader : MonoBehaviour
             fileToLoad = sequencesToLoad.Find(x => x.Contains("CoastUpDown")); 
         }
         levelController.axis = fileToLoad;
-
     }
     public void AddObjectsToLists()
     {
@@ -62,8 +57,6 @@ public class ObjectLoader : MonoBehaviour
         {
             fileToLoad = s[0];
         }
-        
-        
     }
 
     public void LoadObject(string path)
@@ -78,18 +71,6 @@ public class ObjectLoader : MonoBehaviour
         else
         {
             locationsDict.Add(myObject.objectId, myObject);
-        }
-
-    }
-    public void ShowExampleTarget()
-    {
-        levelController.SpawnExample();
-    }
-    public void HideExampleTarget()
-    {
-        foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
-        {
-            Destroy(g);
         }
     }
 }

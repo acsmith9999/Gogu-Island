@@ -1,37 +1,32 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using UnityStandardAssets.Characters.FirstPerson;
 
 public class CalculateDirection : MonoBehaviour
 {
-    public GameObject[] anchors;
     private FirstPersonController player;
-    public GameObject target;
-    public GameObject startCrossAxis, endCrossAxis, inlandAnchor;
-    public string sceneName, givenDirection;
-
-    public float targetToPlayer, refToPlayer, refToTarget, minDist;
-    public float angle, inlandToPlayer, inlandToTarget;
-
-    private Vector3 aMin;
-    public Vector3 targetRef;
-    private Vector2 endPointV2, inlandtoV2, playerRef;
-
-    public Text directionText;
-
-    public string towards, away, across1, across2;
-
-    public AudioSource src;
-    public AudioClip towardsGeo, awayGeo, towardsAbs, awayAbs;
-    
-    public int numberOfDirections = 0;
-    public List<GameDirection> gameDirections;
-
     private LevelController l;
     private SoundManager sm;
+
+    public GameObject target;
+    private GameObject absoluteAnchor, geocentricAnchor;
+    
+    private string givenDirection;
+    private float targetToPlayer, AbsRefToPlayer, refToTarget, angle, inlandToPlayer, inlandToTarget;
+
+    private Vector2 endPointV2, inlandtoV2, playerRef, targetRef;
+
+    private AudioSource src;
+    private AudioClip towardsGeo, awayGeo, towardsAbs, awayAbs;
+    
+    private int _numberOfDirections = 0;
+    public int numberOfDirections 
+    { 
+        get { return _numberOfDirections; }
+        set { _numberOfDirections = value; }
+    }
+
+    public List<GameDirection> gameDirections;
 
     private void Start()
     {
@@ -40,14 +35,11 @@ public class CalculateDirection : MonoBehaviour
         l = FindObjectOfType<LevelController>();
         sm = FindObjectOfType<SoundManager>();
 
-        directionText.text = "";
+        absoluteAnchor = GameObject.Find("absolute");
+        geocentricAnchor = GameObject.Find("geocentric");
 
-        playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
-        //targetRef = target.transform.position;
-
-        sceneName = SceneManager.GetActiveScene().name;
-
-        endPointV2 = new Vector2(endCrossAxis.transform.position.x, endCrossAxis.transform.position.z);
+        endPointV2 = new Vector2(absoluteAnchor.transform.position.x, absoluteAnchor.transform.position.z);
+        inlandtoV2 = new Vector2(geocentricAnchor.transform.position.x, geocentricAnchor.transform.position.z);
 
         if (MainMenu.wordList1)
         {
@@ -63,9 +55,119 @@ public class CalculateDirection : MonoBehaviour
             towardsAbs = sm.baki;
             awayAbs = sm.bago;
         }
-
     }
 
+    public void GetDirection(int axes)
+    {
+        //increase th counter for directions given
+        numberOfDirections++;
+        //calculate player and target position
+        playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
+        targetRef = new Vector2(target.transform.position.x, target.transform.position.z);
+
+        //distance from player to target
+        targetToPlayer = Vector2.Distance(targetRef, playerRef);
+
+        //Method calculates on one axis using transform
+        if (axes == 1)
+        {
+        if (l.axis.Contains("Land"))
+        {
+            //calculate distances between player target and geo ref
+            inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+            inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
+        
+            //get cosine of angle geocentric ref
+            float cAngLand = (targetToPlayer * targetToPlayer + inlandToPlayer * inlandToPlayer - inlandToTarget * inlandToTarget) / (2 * targetToPlayer * inlandToPlayer);
+            //convert angle to radians
+            float rad2 = Mathf.Acos(cAngLand);
+            //convert radians to complementary angle
+            angle = Mathf.Rad2Deg * rad2; //this is the up/down angle
+
+            if (target.transform.position.x > player.transform.position.x)
+            {
+                src.PlayOneShot(towardsGeo);
+                givenDirection = towardsGeo.name;
+            }
+            else
+            {
+                src.PlayOneShot(awayGeo);
+                givenDirection = awayGeo.name;
+            }
+        }
+        else if (l.axis.Contains("Coast"))
+        {
+            //calculate distances between player target and absolute ref
+            AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+            refToTarget = Vector2.Distance(endPointV2, targetRef);
+
+            //get cosine of angle absolute ref
+            float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
+            //convert angle to radians
+            float rad = Mathf.Acos(cAngSun);
+            //convert radians to complementary angle
+            angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+
+            if (target.transform.position.z > player.transform.position.z)
+            {
+                src.PlayOneShot(towardsAbs);
+                givenDirection = towardsAbs.name;
+            }
+            else
+            {
+                src.PlayOneShot(awayAbs);
+                givenDirection = awayAbs.name;
+            }
+        }
+        }
+        //Method compares two axes and returns direction up to 180 degrees
+        else if (axes == 2)
+        {
+            //calculate distances between player target and geo ref
+            inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+            inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
+
+            //calculate distances between player target and absolute ref
+            AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+            refToTarget = Vector2.Distance(endPointV2, targetRef);
+
+            //get cosine of angle absolute ref
+            float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
+            //convert angle to radians
+            float rad = Mathf.Acos(cAngSun);
+            //convert radians to complementary angle
+            angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+
+            //calculate which side of the object the player is on
+            if (angle <= 60)
+            {
+                src.PlayOneShot(towardsGeo);
+                givenDirection = towardsGeo.name;
+            }
+            else if (angle > 120)
+            {
+                src.PlayOneShot(awayGeo);
+                givenDirection = awayGeo.name;
+            }
+            else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
+            {
+                src.PlayOneShot(towardsAbs);
+                givenDirection = towardsAbs.name;
+            }
+            else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
+            {
+                src.PlayOneShot(awayAbs);
+                givenDirection = awayAbs.name;
+            }
+        }
+        else { Debug.Log("error calculating"); }
+
+        GameDirection temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
+        gameDirections.Add(temp);
+        Debug.Log(temp.id + " " + temp.direction + " " + temp.distanceToTarget + " " + temp.angleToTarget + " " + temp.timeElapsed);
+    }
+
+    #region old methods
     public void Triangulate(string sceneName)
     {
         if (target != null)
@@ -74,192 +176,166 @@ public class CalculateDirection : MonoBehaviour
             playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
             if (sceneName == "Hill")
             {
-                GetClosestAnchor();
+                //GetClosestAnchor();
                 TriangulateSlope();
             }
             else if (sceneName == "StraightCoast")
             {
-                TriangulateCoast();
+                //TriangulateCoast();
+
             }
-            else if(sceneName == "RoundCoast")
+            else if (sceneName == "RoundCoast")
             {
-                TriangulateRoundCoast();
+                //TriangulateRoundCoast();
+
             }
 
         }
 
     }
-    //Method compares two axes
     public void TriangulateSlope()
     {
         //sides of triangle
         //relative to across axis
-        targetToPlayer = Vector2.Distance(new Vector2(targetRef.x, targetRef.z), playerRef);
-        refToPlayer = Vector2.Distance(aMin, playerRef);
-        refToTarget = Vector2.Distance(aMin, new Vector2(targetRef.x, targetRef.z));
+        //targetToPlayer = Vector2.Distance(new Vector2(targetRef.x, targetRef.z), playerRef);
+        //AbsRefToPlayer = Vector2.Distance(aMin, playerRef);
+        //refToTarget = Vector2.Distance(aMin, new Vector2(targetRef.x, targetRef.z));
 
-        float cAngCross = (targetToPlayer * targetToPlayer + refToPlayer * refToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * refToPlayer);
+        //float cAngCross = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
 
-        //relative to slope axis
-        float e = Vector2.Distance(endPointV2, playerRef);
-        float f = Vector2.Distance(endPointV2, new Vector2(targetRef.x, targetRef.z));
-        Debug.Log(e + " " + f);
+        ////relative to slope axis
+        //float e = Vector2.Distance(endPointV2, playerRef);
+        //float f = Vector2.Distance(endPointV2, new Vector2(targetRef.x, targetRef.z));
+        //Debug.Log(e + " " + f);
 
-        float rad = Mathf.Acos(cAngCross);
-        angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+        //float rad = Mathf.Acos(cAngCross);
+        //angle = Mathf.Rad2Deg * rad; //this is the up/down angle
 
-        //calculate which side of the object the player is on
-        if (angle <= 60)
-        {
-            directionText.text = away;
-        }
-        else if (angle > 120)
-        {
-            directionText.text = towards;
-        }
-        else if (angle > 60 && angle <= 120 && e < f)
-        {
-            directionText.text = across1;
-        }
-        else if (angle > 60 && angle <= 120 && e > f)
-        {
-            directionText.text = across2;
-        }
+        ////calculate which side of the object the player is on
+        //if (angle <= 60)
+        //{
+
+        //}
+        //else if (angle > 120)
+        //{
+
+        //}
+        //else if (angle > 60 && angle <= 120 && e < f)
+        //{
+
+        //}
+        //else if (angle > 60 && angle <= 120 && e > f)
+        //{
+
+        //}
 
     }
-    //Method uses one axis only
     public void TriangulateCoast()
     {
-        //sides of triangle
-        //relative to up/down solar axis
-        targetToPlayer = Vector2.Distance(new Vector2(targetRef.x, targetRef.z), playerRef);
-        refToPlayer = Vector2.Distance(endPointV2, playerRef);
-        refToTarget = Vector2.Distance(endPointV2, new Vector2(targetRef.x, targetRef.z));
 
-        float cAngSun = (targetToPlayer * targetToPlayer + refToPlayer * refToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * refToPlayer);
+        ////sides of triangle
+        ////relative to up/down solar axis
+        //targetToPlayer = Vector2.Distance(new Vector2(targetRef.x, targetRef.z), playerRef);
+        //AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+        //refToTarget = Vector2.Distance(endPointV2, new Vector2(targetRef.x, targetRef.z));
 
-        //relative to land/sea axis
-        //method only returns 0-180
-        inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
-        inlandToTarget = Vector2.Distance(inlandtoV2, new Vector2(targetRef.x, targetRef.z));
+        ////(a2 + b2 - c2)/(2ab)
+        //float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
 
-
-        float rad = Mathf.Acos(cAngSun);
-        angle = Mathf.Rad2Deg * rad; //this is the up/down angle
-
-        if (l.axis.Contains("Land"))
-        {
-            if (inlandToPlayer < inlandToTarget)
-            {
-                src.PlayOneShot(towardsGeo);
-                givenDirection = towardsGeo.name;
-            }
-            else if (inlandToPlayer > inlandToTarget)
-            {
-                src.PlayOneShot(awayGeo);
-                givenDirection = awayGeo.name;
-            }
-        }
-        else if (l.axis.Contains("Coast"))
-        {
-            if (angle <= 90)
-            {
-                src.PlayOneShot(towardsAbs);
-                givenDirection = towardsAbs.name;
-            }
-            else if (angle > 90)
-            {
-                src.PlayOneShot(awayAbs);
-                givenDirection = awayAbs.name;
-            }
-        }
-
-        GameDirection temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
-        gameDirections.Add(temp);
-
-    }
-
-    //Method compares two axes
-    public void TriangulateRoundCoast()
-    {
-        targetToPlayer = Vector2.Distance(new Vector2(targetRef.x, targetRef.z), playerRef);
-        refToPlayer = Vector2.Distance(endPointV2, playerRef);
-        refToTarget = Vector2.Distance(endPointV2, new Vector2(targetRef.x, targetRef.z));
-
-        float cAngSun = (targetToPlayer * targetToPlayer + refToPlayer * refToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * refToPlayer);
-
-        //relative to land/sea axis
-        //method only returns 0-180
-        float e = Vector2.Distance(inlandtoV2, playerRef);
-        float f = Vector2.Distance(inlandtoV2, new Vector2(targetRef.x, targetRef.z));
-
-        Debug.Log(e + " " + f);
-
-        float rad = Mathf.Acos(cAngSun);
-        angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+        ////relative to land/sea axis
+        ////method only returns 0-180
+        //inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+        //inlandToTarget = Vector2.Distance(inlandtoV2, new Vector2(targetRef.x, targetRef.z));
 
 
-        //if on opposite side on the island, directions are more difficult
-        //but that can be avoided through designing the gameplay
+        //float rad = Mathf.Acos(cAngSun);
+        //angle = Mathf.Rad2Deg * rad; //this is the up/down angle
 
-        //calculate which side of the object the player is on
-        if (angle <= 60)
-        {
-            directionText.text = towards;
-        }
-        else if (angle > 120)
-        {
-            directionText.text = away;
-        }
-        else if (angle > 60 && angle <= 120 && e < f)
-        {
-            directionText.text = across1;
-        }
-        else if (angle > 60 && angle <= 180 && e > f)
-        {
-            directionText.text = across2;
-        }
-    }
-    public void GetClosestAnchor()
-    {
-        minDist = Mathf.Infinity;
-        //find closest anchor point to base calculations off
-        foreach (GameObject a in anchors)
-        {
-            float dist = Vector3.Distance(a.transform.position, playerRef);
-            if (dist <= minDist)
-            {
-                aMin = a.transform.position;
-                minDist = dist;
-            }
-        }
-    }
-
-    private void Update()
-    {
-        //if(target != null)
+        //if (l.axis.Contains("Land"))
         //{
-        //if(FindObjectOfType<CheckIfMoving>().timer == 0)
+        //    if (inlandToPlayer < inlandToTarget)
+        //    {
+        //        src.PlayOneShot(towardsGeo);
+        //        givenDirection = towardsGeo.name;
+        //    }
+        //    else if (inlandToPlayer > inlandToTarget)
+        //    {
+        //        src.PlayOneShot(awayGeo);
+        //        givenDirection = awayGeo.name;
+        //    }
+        //}
+        //else if (l.axis.Contains("Coast"))
         //{
+        //    if (angle <= 90)
+        //    {
+        //        src.PlayOneShot(towardsAbs);
+        //        givenDirection = towardsAbs.name;
+        //    }
+        //    else if (angle > 90)
+        //    {
+        //        src.PlayOneShot(awayAbs);
+        //        givenDirection = awayAbs.name;
+        //    }
+        //}
+
+        //GameDirection temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
+        //gameDirections.Add(temp);
+
+    }
+    //Method compares two axes and returns direction in 360 degrees
+    public void TwoAxes()
+    {
         //playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
-        //if (isSlope)
-        //{
-        //    GetClosestAnchor();
-        //    TriangulateSlope();
-        //}
-        //if (isCoast) 
-        //{
-        //    TriangulateCoast();
-        //    Triangulate(sceneName);
-        //}
-        //if (isRiver) { }
-        //Triangulate(sceneName);
-        //}
+        //Vector2 targetRefV2 = new Vector2(targetRef.x, targetRef.z);
+        //targetToPlayer = Vector2.Distance(targetRefV2, playerRef);
+        //AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+        //refToTarget = Vector2.Distance(endPointV2, targetRefV2);
 
-        //}
-        //if (!FindObjectOfType<CheckIfMoving>().isMoving)
+        //float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
+
+        //inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+        //inlandToTarget = Vector2.Distance(inlandtoV2, targetRefV2);
+
+        //float rad = Mathf.Acos(cAngSun);
+        //angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+
+        ////calculate which side of the object the player is on
+        //if (angle <= 60)
         //{
-        //    Triangulate(sceneName);
+        //    src.PlayOneShot(towardsGeo);
+        //    givenDirection = towardsGeo.name;
+        //}
+        //else if (angle > 120)
+        //{
+        //    src.PlayOneShot(awayGeo);
+        //    givenDirection = awayGeo.name;
+        //}
+        //else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
+        //{
+        //    src.PlayOneShot(towardsAbs);
+        //    givenDirection = towardsAbs.name;
+        //}
+        //else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
+        //{
+        //    src.PlayOneShot(awayAbs);
+        //    givenDirection = awayAbs.name;
         //}
     }
+
+    //public void GetClosestAnchor()
+    //{
+    //    minDist = Mathf.Infinity;
+    //    //find closest anchor point to base calculations off
+    //    foreach (GameObject a in anchors)
+    //    {
+    //        float dist = Vector3.Distance(a.transform.position, playerRef);
+    //        if (dist <= minDist)
+    //        {
+    //            aMin = a.transform.position;
+    //            minDist = dist;
+    //        }
+    //    }
+    //}
+
+    #endregion
 }

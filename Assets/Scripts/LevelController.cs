@@ -1,20 +1,18 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using System.Linq;
-using UnityEngine.SceneManagement;
 using PixelCrushers.DialogueSystem;
+using System;
+using System.Xml.Serialization;
+using System.IO;
 
 public class LevelController : MonoBehaviour
 {
     public GameObject pickup;
 
-    public Text directionsText;
-
     public bool timer = false;
-    public float elapsedTime;
-    public float trialTime;
+    private float elapsedTime = 0;
+    public float trialTime = 0;
 
     private ObjectLoader objectLoader;
     private CalculateDirection calculateDirection;
@@ -22,7 +20,7 @@ public class LevelController : MonoBehaviour
 
     public int trialNumber = 1;
     public int sequencesCompleted = 0;
-    public bool geoFirstSeq;
+    private bool geoFirstSeq;
 
     public string axis;
 
@@ -35,51 +33,48 @@ public class LevelController : MonoBehaviour
         objectLoader = FindObjectOfType<ObjectLoader>();
         calculateDirection = FindObjectOfType<CalculateDirection>();
         trialDatas = new DataCollection();
-        elapsedTime = 0;
-        trialTime = 0;
         geoFirstSeq = MainMenu.startGeo;
+        if (geoFirstSeq)
+        {
+            DialogueLua.SetVariable("IsGeo", true);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        ////for use in testing
+        //if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
+        //{
+        //    SpawnPickup();
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
-        {
-            SpawnPickup();
-        }
-
-        //maybe delete
-        if (Input.GetKeyDown(KeyCode.Backspace))
-        {
-            foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
-            {
-                Destroy(g);
-            }
-            //if (locationsList.Count ==0 && objectLoader.inRange == true)
-            //{
-            //    objectLoader.AddObjectsToLists();
-            //}
-            // The only way at the moment to repopulate the items is by leaving the trigger area
-            directionsText.enabled = false;
-            timer = false;
-            //elapsedTime = 0;
-        }
+        ////for use in testing
+        //if (Input.GetKeyDown(KeyCode.Backspace))
+        //{
+        //    foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
+        //    {
+        //        Destroy(g);
+        //    }
+        //    //if (locationsList.Count ==0 && objectLoader.inRange == true)
+        //    //{
+        //    //    objectLoader.AddObjectsToLists();
+        //    //}
+        //    // The only way at the moment to repopulate the items is by leaving the trigger area
+        //    timer = false;
+        //    //elapsedTime = 0;
+        //}
 
         if (timer)
         {
             elapsedTime += Time.deltaTime;
             trialTime += Time.deltaTime;
         }
-        //if (Input.GetKeyDown(KeyCode.O))
-        //{
-        //    WinGame();
-        //}
-
     }
     private void LateUpdate()
     {
-        if (trialTime >= 200)
+        //1min time limit per trial
+        if (trialTime >= 90)
         {
             GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
         }
@@ -92,35 +87,52 @@ public class LevelController : MonoBehaviour
 
             trialNumber++;
 
-            int index = Random.Range(0, locationsList.Count);
-            calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(index).location, Quaternion.identity);
+            int index = UnityEngine.Random.Range(0, locationsList.Count);
+            calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(0).location, Quaternion.identity);
             
-            calculateDirection.targetRef = calculateDirection.target.transform.position;
-            directionsText.text = "";
-            directionsText.enabled = true;
-
-            //directionsText.enabled = true;
-            //directionsText.text = locationsList.ElementAt(index).description;
-
             locationsList.RemoveAt(index);
         }
         else { Debug.Log("No more locations to spawn"); }
     }
-
     public void SpawnExample()
     {
         Instantiate(pickup, new Vector3(391.8f, 33.43f, 488.1f), Quaternion.identity);
     }
-    //public void WinGame()
-    //{
-    //    FindObjectOfType<FadeInOut>().FadeToLevel("EndScene");
-    //}
+    public void DestroyTargets()
+    {
+        foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
+        {
+            Destroy(g);
+        }
+    }
     public void LoadNextSequence()
     {
         PixelCrushers.DialogueSystem.DialogueManager.StartConversation("RobOnSequenceEnd");
         DialogueLua.SetVariable("GameFinished", true);
-
+        DialogueLua.SetVariable("IsGeo", !geoFirstSeq);
         trialNumber = 0;
         axis = objectLoader.fileToLoad;
+    }
+    public void ExportData()
+    {
+        //Export the data to csv
+        if (!Directory.Exists(Application.streamingAssetsPath + "/Export"))
+        {
+            Directory.CreateDirectory(Application.streamingAssetsPath + "/Export");
+        }
+        string path = Application.streamingAssetsPath + "\\Export\\";
+        string exportFile = (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
+        string exportPath = path + exportFile + "-records.csv";
+        ExportTrialData.Write(exportPath, trialDatas);
+
+        //Export data to xml
+        var serializer = new XmlSerializer(typeof(DataCollection));
+        var stream = new FileStream(path + exportFile + "-records.xml", FileMode.Create);
+        serializer.Serialize(stream, trialDatas);
+    }
+
+    private void OnApplicationQuit()
+    {
+        ExportData();
     }
 }

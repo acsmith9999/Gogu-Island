@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class StartScene : MonoBehaviour
 {
-    public GameObject player;
+    public GameObject player, spawnPoint;
     private Vector3 p;
     private Quaternion q;
 
@@ -20,8 +20,7 @@ public class StartScene : MonoBehaviour
         }
         else if (!GameObject.FindGameObjectWithTag("Player"))
         {
-            p = new Vector3(248.5f, 30, 375); q = new Quaternion(0, 150, 0, 0);
-            Instantiate(player, p, q);
+            Instantiate(player, spawnPoint.transform.position, spawnPoint.transform.rotation);
         }
         
         

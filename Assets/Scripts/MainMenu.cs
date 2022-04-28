@@ -1,14 +1,16 @@
-using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public  class MainMenu : MonoBehaviour
 {
     public static bool startGeo = true;
     public static bool wordList1 = true;
+    public Canvas instructions;
 
+    private void Start()
+    {
+        instructions.enabled = false;
+    }
     public static void NewGameStart()
     {
         if (SaveManager.activeSave != null)
@@ -18,29 +20,6 @@ public  class MainMenu : MonoBehaviour
         SceneManager.LoadSceneAsync("StraightCoast");
 
     }
-
-    //public static void StartAbs()
-    //{
-    //    startGeo = false;
-    //    SceneManager.LoadScene("StraightCoast");
-    //}
-
-    //public static void StartGeo()
-    //{
-    //    startGeo = true;
-    //    SceneManager.LoadScene("StraightCoast");
-    //}
-
-    //public void ToggleWordList()
-    //{
-    //    string selected = FindObjectOfType<ToggleGroup>().ActiveToggles().First().GetComponentsInChildren<Text>().First(t=>t.name=="Label").text;
-    //    Debug.Log(selected);
-    //    if (selected == "Wordlist1")
-    //    {
-    //        wordList1 = true;
-    //    }
-    //    else { wordList1 = false; }
-    //}
 
     public void list1()
     {
@@ -57,5 +36,14 @@ public  class MainMenu : MonoBehaviour
     public void Absolute()
     {
         startGeo = false;
+    }
+
+    public void HowToPlay()
+    {
+        instructions.enabled = true;
+    }
+    public void HideInstructions()
+    {
+        instructions.enabled = false;
     }
 }

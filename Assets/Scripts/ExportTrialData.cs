@@ -1,10 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using System.IO;
-using System.Xml.Serialization;
-using System.Globalization;
-using System;
 
 public static class ExportTrialData
 {
@@ -27,6 +21,7 @@ public static class ExportTrialData
                 tw.WriteLine(",,,,," + records[i].gameDirections[j].id + "," + records[i].gameDirections[j].distanceToTarget + "," + records[i].gameDirections[j].direction + "," + records[i].gameDirections[j].angleToTarget + "," + records[i].gameDirections[j].timeElapsed);
             }
         }
+
         tw.Close();
     }
 
