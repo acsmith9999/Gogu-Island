@@ -8,6 +8,8 @@ public class Pickup : MonoBehaviour
     private TrialData currentTrial;
     private SoundManager sm;
     private CheckIfMoving checkIfMoving;
+    private bool isColliding = false;
+    private int i = 0;
 
     private void Start()
     {
@@ -19,12 +21,23 @@ public class Pickup : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        CompleteTrial(true);
+        if (other.tag=="Player")
+        {
+            if (i == 0)
+            {
+                i++;
+                if (isColliding) return;
+                isColliding = true;
+                GetComponent<BoxCollider>().enabled = false;
+                CompleteTrial(true);
+
+            }
+        }
     }
     public void CompleteTrial(bool success)
     {
+        //GetComponent<BoxCollider>().isTrigger = false;
         levelController.timer = false;
-        GetComponent<BoxCollider>().isTrigger = false;
 
         List<GameDirection> g = new List<GameDirection>(c.gameDirections);
         currentTrial = new TrialData(levelController.trialNumber, levelController.axis, c.numberOfDirections, levelController.trialTime, g, success);
@@ -54,7 +67,7 @@ public class Pickup : MonoBehaviour
             else if (levelController.sequencesCompleted == 2)
             {
                 //finish game
-                //levelController.ExportData();
+                levelController.ExportData();
                 //load ending scene
                 FindObjectOfType<FadeInOut>().FadeToLevel("EndScene");
             }
@@ -62,13 +75,15 @@ public class Pickup : MonoBehaviour
         else
         {
             checkIfMoving.timer = 3f;
-            Destroy(this.gameObject);
-            foreach(GameObject pickup in GameObject.FindGameObjectsWithTag("pickup"))
+
+            foreach (GameObject pickup in GameObject.FindGameObjectsWithTag("pickup"))
             {
                 Destroy(pickup);
             }
+            Destroy(this);
             levelController.SpawnPickup();
             c.GetDirection(1);
+
         }
     }
 }

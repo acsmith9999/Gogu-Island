@@ -8,7 +8,7 @@ using System.IO;
 
 public class LevelController : MonoBehaviour
 {
-    public GameObject pickup;
+    public GameObject pickup, exampleSpawn;
 
     public bool timer = false;
     private float elapsedTime = 0;
@@ -70,11 +70,16 @@ public class LevelController : MonoBehaviour
             elapsedTime += Time.deltaTime;
             trialTime += Time.deltaTime;
         }
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            ExportData();
+        }
+
     }
     private void LateUpdate()
     {
         //1min time limit per trial
-        if (trialTime >= 90)
+        if (trialTime >= 60)
         {
             GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
         }
@@ -90,13 +95,13 @@ public class LevelController : MonoBehaviour
             int index = UnityEngine.Random.Range(0, locationsList.Count);
             calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(0).location, Quaternion.identity);
             
-            locationsList.RemoveAt(index);
+            locationsList.RemoveAt(0);
         }
         else { Debug.Log("No more locations to spawn"); }
     }
     public void SpawnExample()
     {
-        Instantiate(pickup, new Vector3(391.8f, 33.43f, 488.1f), Quaternion.identity);
+        Instantiate(pickup, exampleSpawn.transform.position, Quaternion.identity);
     }
     public void DestroyTargets()
     {
@@ -131,8 +136,8 @@ public class LevelController : MonoBehaviour
         serializer.Serialize(stream, trialDatas);
     }
 
-    private void OnApplicationQuit()
-    {
-        ExportData();
-    }
+    //private void OnApplicationQuit()
+    //{
+    //    ExportData();
+    //}
 }

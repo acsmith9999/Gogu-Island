@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
 
@@ -17,7 +19,7 @@ public class CalculateDirection : MonoBehaviour
     private Vector2 endPointV2, inlandtoV2, playerRef, targetRef;
 
     private AudioSource src;
-    private AudioClip towardsGeo, awayGeo, towardsAbs, awayAbs;
+    public List<AudioClip> towardsGeo, awayGeo, towardsAbs, awayAbs;
     
     private int _numberOfDirections = 0;
     public int numberOfDirections 
@@ -27,6 +29,19 @@ public class CalculateDirection : MonoBehaviour
     }
 
     public List<GameDirection> gameDirections;
+    private Vector3 lastMousePosition;
+    private Vector3 newMousePosition;
+    private Transform lastTransform;
+    private bool getMovement;
+    private bool getMouseMovement = false;
+    private bool getkeyStroke;
+    private bool directionHasResponse;
+    private string firstMovement;
+    private Transform newTransform;
+    private Transform compareTransform;
+    private float firstMouseX;
+    private float firstMouseY;
+    private GameDirection temp;
 
     private void Start()
     {
@@ -86,13 +101,15 @@ public class CalculateDirection : MonoBehaviour
 
             if (target.transform.position.x > player.transform.position.x)
             {
-                src.PlayOneShot(towardsGeo);
-                givenDirection = towardsGeo.name;
+                int index = Random.Range(0, towardsGeo.Count);
+                src.PlayOneShot(towardsGeo[index]);
+                givenDirection = towardsGeo[index].name;
             }
             else
             {
-                src.PlayOneShot(awayGeo);
-                givenDirection = awayGeo.name;
+                int index = Random.Range(0, awayGeo.Count);
+                src.PlayOneShot(awayGeo[index]);
+                givenDirection = awayGeo[index].name;
             }
         }
         else if (l.axis.Contains("Coast"))
@@ -110,13 +127,15 @@ public class CalculateDirection : MonoBehaviour
 
             if (target.transform.position.z > player.transform.position.z)
             {
-                src.PlayOneShot(towardsAbs);
-                givenDirection = towardsAbs.name;
+                int index = Random.Range(0, towardsAbs.Count);
+                src.PlayOneShot(towardsAbs[index]);
+                givenDirection = towardsAbs[index].name;
             }
             else
             {
-                src.PlayOneShot(awayAbs);
-                givenDirection = awayAbs.name;
+                int index = Random.Range(0, awayAbs.Count);
+                src.PlayOneShot(awayAbs[index]);
+                givenDirection = awayAbs[index].name;
             }
         }
         }
@@ -141,32 +160,82 @@ public class CalculateDirection : MonoBehaviour
             //calculate which side of the object the player is on
             if (angle <= 60)
             {
-                src.PlayOneShot(towardsGeo);
-                givenDirection = towardsGeo.name;
+                int index = Random.Range(0, towardsGeo.Count);
+                src.PlayOneShot(towardsGeo[index]);
+                givenDirection = towardsGeo[index].name;
             }
             else if (angle > 120)
             {
-                src.PlayOneShot(awayGeo);
-                givenDirection = awayGeo.name;
+                int index = Random.Range(0, awayGeo.Count);
+                src.PlayOneShot(awayGeo[index]);
+                givenDirection = awayGeo[index].name;
             }
             else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
             {
-                src.PlayOneShot(towardsAbs);
-                givenDirection = towardsAbs.name;
+                int index = Random.Range(0, towardsAbs.Count);
+                src.PlayOneShot(towardsAbs[index]);
+                givenDirection = towardsAbs[index].name;
             }
             else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
             {
-                src.PlayOneShot(awayAbs);
-                givenDirection = awayAbs.name;
+                int index = Random.Range(0, awayAbs.Count);
+                src.PlayOneShot(awayAbs[index]);
+                givenDirection = awayAbs[index].name;
             }
         }
         else { Debug.Log("error calculating"); }
 
-        GameDirection temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
+        temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
         gameDirections.Add(temp);
-        Debug.Log(temp.id + " " + temp.direction + " " + temp.distanceToTarget + " " + temp.angleToTarget + " " + temp.timeElapsed);
+
+        //Debug.Log(temp.id + " " + temp.direction + " " + temp.distanceToTarget + " " + temp.angleToTarget + " " + temp.timeElapsed);
+
+        getMovement = true;
+        getMouseMovement = true;
+        getkeyStroke = true;
     }
 
+    private void Update()
+    {
+
+        if (getMovement)
+        {          
+            lastTransform = player.transform;
+            gameDirections.Last().response = new ResponseAction();
+
+            if (Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0)
+            {
+                firstMouseX = Input.GetAxis("Mouse X");
+                firstMouseY = Input.GetAxis("Mouse Y");
+                gameDirections.Last().response.firstMouseX = firstMouseX;
+                gameDirections.Last().response.firstMouseY = firstMouseY;
+                getMouseMovement = false;
+            }
+
+
+            if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
+            {
+                firstMovement = Input.inputString;
+                gameDirections.Last().response.firstKeyStroke = firstMovement;
+                getkeyStroke = false;
+            }
+
+
+            if (getMouseMovement==false && getkeyStroke == false)
+            {
+                StartCoroutine(getNewTransform());
+                getMovement = false;
+            }
+
+        }
+
+    }
+
+    IEnumerator getNewTransform()
+    {
+        yield return new WaitForSeconds(1);
+        compareTransform = player.transform;
+    }
     #region old methods
     public void Triangulate(string sceneName)
     {

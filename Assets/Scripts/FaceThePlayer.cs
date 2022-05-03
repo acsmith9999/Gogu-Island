@@ -15,7 +15,13 @@ public class FaceThePlayer : MonoBehaviour
     {
         player = FindObjectOfType<CharacterController>();
     }
-
+    private void OnEnable()
+    {
+        if (player == null)
+        {
+            player = FindObjectOfType<CharacterController>();
+        }
+    }
     void LookSmoothly()
     {
         float time = 0.7f;
@@ -52,7 +58,11 @@ public class FaceThePlayer : MonoBehaviour
 
     private void OnTriggerStay(Collider other) 
     { 
-        LookSmoothly();
+        if(player != null)
+        {
+            LookSmoothly();
+        }
+        
     }
 
 }

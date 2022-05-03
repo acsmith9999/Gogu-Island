@@ -5,4 +5,5 @@ public class Locations
 {
     public Vector3 location;
     public int objectId;
+    public string description;
 }
