@@ -42,6 +42,7 @@ public class Pickup : MonoBehaviour
         List<GameDirection> g = new List<GameDirection>(c.gameDirections);
         currentTrial = new TrialData(levelController.trialNumber, levelController.axis, c.numberOfDirections, levelController.trialTime, g, success);
         levelController.trialDatas.Add(currentTrial);
+        ExportTrialData.trialDatas.Add(currentTrial);
         c.numberOfDirections = 0;
         c.gameDirections.Clear();
         levelController.trialTime = 0;
@@ -59,15 +60,16 @@ public class Pickup : MonoBehaviour
         {
             // WIN CONDITION
             levelController.sequencesCompleted++;
-            if (levelController.sequencesCompleted == 1)
+            if (levelController.sequencesCompleted == 2)
             {
                 levelController.LoadNextSequence();
                 Destroy(this.gameObject);
             }
-            else if (levelController.sequencesCompleted == 2)
+            else if (levelController.sequencesCompleted == 3)
             {
                 //finish game
-                levelController.ExportData();
+                ExportTrialData.ExportData(ExportTrialData.trialDatas);
+                ExportTrialData.ExportMovement(ExportTrialData.movements);
                 //load ending scene
                 FindObjectOfType<FadeInOut>().FadeToLevel("EndScene");
             }
@@ -82,7 +84,7 @@ public class Pickup : MonoBehaviour
             }
             Destroy(this);
             levelController.SpawnPickup();
-            c.GetDirection(1);
+            c.GetDirection(Parameters.numberOfAxes);
 
         }
     }

@@ -5,13 +5,14 @@ using PixelCrushers.DialogueSystem;
 using System;
 using System.Xml.Serialization;
 using System.IO;
+using System.Collections;
 
 public class LevelController : MonoBehaviour
 {
-    public GameObject pickup, exampleSpawn;
+    public GameObject pickup, example, tutorial, exampleSpawn;
 
     public bool timer = false;
-    private float elapsedTime = 0;
+    public float elapsedTime = 0;
     public float trialTime = 0;
 
     private ObjectLoader objectLoader;
@@ -24,6 +25,8 @@ public class LevelController : MonoBehaviour
 
     public string axis;
 
+    public GameObject geoBoundary, absBoundary;
+
     //export this
     public DataCollection trialDatas;
 
@@ -33,21 +36,31 @@ public class LevelController : MonoBehaviour
         objectLoader = FindObjectOfType<ObjectLoader>();
         calculateDirection = FindObjectOfType<CalculateDirection>();
         trialDatas = new DataCollection();
-        geoFirstSeq = MainMenu.startGeo;
+
+
+        geoFirstSeq = Parameters.startGeo;
         if (geoFirstSeq)
         {
             DialogueLua.SetVariable("IsGeo", true);
         }
+        geoBoundary = GameObject.FindGameObjectWithTag("geoBoundary");
+        geoBoundary.SetActive(false);
+        absBoundary = GameObject.FindGameObjectWithTag("absBoundary");
+        absBoundary.SetActive(false);
     }
 
     // Update is called once per frame
     void Update()
     {
         ////for use in testing
-        //if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
-        //{
-        //    SpawnPickup();
-        //}
+        if (Input.GetKeyDown(KeyCode.Backspace))
+        {
+            objectLoader.AddObjectsToLists();
+        }
+        if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
+        {
+            SpawnTutorial();
+        }
 
         ////for use in testing
         //if (Input.GetKeyDown(KeyCode.Backspace))
@@ -69,20 +82,25 @@ public class LevelController : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
             trialTime += Time.deltaTime;
+            
         }
         if (Input.GetKeyDown(KeyCode.G))
         {
-            ExportData();
+            ExportTrialData.ExportData(ExportTrialData.trialDatas);
         }
 
     }
     private void LateUpdate()
     {
         //1min time limit per trial
-        if (trialTime >= 60)
+        if (sequencesCompleted > 0)
         {
-            GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
+            if (trialTime >= 60)
+            {
+                GameObject.FindObjectOfType<Pickup>().CompleteTrial(false);
+            }
         }
+
     }
     public void SpawnPickup() {
         if (locationsList.Count > 0)
@@ -92,7 +110,7 @@ public class LevelController : MonoBehaviour
 
             trialNumber++;
 
-            int index = UnityEngine.Random.Range(0, locationsList.Count);
+            //int index = UnityEngine.Random.Range(0, locationsList.Count);
             calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(0).location, Quaternion.identity);
             
             locationsList.RemoveAt(0);
@@ -101,8 +119,24 @@ public class LevelController : MonoBehaviour
     }
     public void SpawnExample()
     {
-        Instantiate(pickup, exampleSpawn.transform.position, Quaternion.identity);
+        Instantiate(example, exampleSpawn.transform.position, Quaternion.identity);
     }
+    public void SpawnTutorial()
+    {
+        if (locationsList.Count > 0)
+        {
+            timer = true;
+            calculateDirection.target = Instantiate(tutorial, locationsList.ElementAt(0).location, Quaternion.identity);
+            calculateDirection.GetDirection(Parameters.numberOfAxes);
+            //camera to target 2s. fix this
+            //PixelCrushers.DialogueSystem.DialogueManager.PlaySequence("Camera(Full Back,listener,1);Delay(2)", calculateDirection.target.transform, calculateDirection.target.transform);
+            //FindObjectOfType<Camera>().transform.LookAt(calculateDirection.target.transform);
+
+            locationsList.RemoveAt(0);
+        }
+        else { Debug.Log("No more locations to spawn"); timer = false; }
+    }
+
     public void DestroyTargets()
     {
         foreach (GameObject g in GameObject.FindGameObjectsWithTag("pickup"))
@@ -116,28 +150,34 @@ public class LevelController : MonoBehaviour
         DialogueLua.SetVariable("GameFinished", true);
         DialogueLua.SetVariable("IsGeo", !geoFirstSeq);
         trialNumber = 0;
+        objectLoader.WhichFileToLoad();
         axis = objectLoader.fileToLoad;
     }
-    public void ExportData()
+    public void TutorialFinished()
     {
-        //Export the data to csv
-        if (!Directory.Exists(Application.streamingAssetsPath + "/Export"))
-        {
-            Directory.CreateDirectory(Application.streamingAssetsPath + "/Export");
-        }
-        string path = Application.streamingAssetsPath + "\\Export\\";
-        string exportFile = (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
-        string exportPath = path + exportFile + "-records.csv";
-        ExportTrialData.Write(exportPath, trialDatas);
-
-        //Export data to xml
-        var serializer = new XmlSerializer(typeof(DataCollection));
-        var stream = new FileStream(path + exportFile + "-records.xml", FileMode.Create);
-        serializer.Serialize(stream, trialDatas);
+        PixelCrushers.DialogueSystem.DialogueManager.StartConversation("TutorialFinished");
+        DialogueLua.SetVariable("TutorialFinished", true);
+        trialNumber = 0;
+        objectLoader.WhichFileToLoad();
+        axis = objectLoader.fileToLoad;
     }
 
     //private void OnApplicationQuit()
     //{
     //    ExportData();
     //}
+
+    public void Boundaries()
+    {
+        if (axis.Contains("LandSea"))
+        {
+            geoBoundary.SetActive(true);
+            absBoundary.SetActive(false);
+        }
+        else if (axis.Contains("CoastUpDown"))
+        {
+            geoBoundary.SetActive(false);
+            absBoundary.SetActive(true);
+        }
+    }
 }

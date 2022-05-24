@@ -5,15 +5,17 @@ using UnityEngine;
 public class MoveNPC : MonoBehaviour
 {
     public GameObject NPCToMove;
-    public Transform MoveTo;
+    public Transform MoveTo, resetPos;
     public bool following;
     [SerializeField]
     private float moveSpeed;
     private Rigidbody rb;
     Coroutine smoothMove = null;
+    private CheckIfMoving check;
 
     private void Start()
     {
+        check = FindObjectOfType<CheckIfMoving>();
         rb = GetComponent<Rigidbody>();
         if(MoveTo == null)
         {
@@ -23,6 +25,7 @@ public class MoveNPC : MonoBehaviour
     public void ILikeToMoveIt()
     {
         NPCToMove.transform.position = MoveTo.position;
+        //NPCToMove.transform.position = Vector3.Lerp(NPCToMove.transform.position, MoveTo.position, moveSpeed);
     }
 
     public void NPCLookAt()
@@ -71,9 +74,18 @@ public class MoveNPC : MonoBehaviour
     {
         if (following)
         {
-            //rb.MovePosition(MoveTo.position * moveSpeed);  
-            NPCToMove.transform.position = Vector3.Lerp(NPCToMove.transform.position, MoveTo.position, moveSpeed);
-        }
+            if (check.isMoving)
+            {
+                //rb.MovePosition(MoveTo.position * moveSpeed);  
+                NPCToMove.transform.position = Vector3.Lerp(NPCToMove.transform.position, MoveTo.position, moveSpeed);
+            }
 
+        }
+    }
+
+    public void Reset()
+    {
+        transform.position = resetPos.position;
+        following = false;
     }
 }

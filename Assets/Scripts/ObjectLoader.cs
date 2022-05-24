@@ -13,9 +13,11 @@ public class ObjectLoader : MonoBehaviour
 
     private LevelController levelController;
 
+    private int counter = 0;
     
     void Start()
     {
+        fileToLoad = "Locations/Tutorial.json";
         levelController = FindObjectOfType<LevelController>();
         GetSequences();
     }
@@ -27,23 +29,28 @@ public class ObjectLoader : MonoBehaviour
         {
             sequencesToLoad.Add(dictionaryItem);
         }
-        if (MainMenu.startGeo)
-        {
-            fileToLoad = sequencesToLoad.Find(x => x.Contains("LandSea"));
-        }
-        else if(!MainMenu.startGeo) 
-        { 
-            fileToLoad = sequencesToLoad.Find(x => x.Contains("CoastUpDown")); 
-        }
-        levelController.axis = fileToLoad;
+
     }
     public void AddObjectsToLists()
     {
+
         locationsDict = new Dictionary<int, Locations>();
         ObjectDictionary dictionary = JsonUtility.FromJson<ObjectDictionary>(JsonFileReader.LoadJsonAsResource(fileToLoad));
         foreach (string dictionaryItem in dictionary.locations)
         {
-            LoadObject(dictionaryItem);
+            if (counter < Parameters.sequenceLength)
+            {
+                try
+                {
+                    LoadObject(dictionaryItem);
+                    counter++;
+                }
+                catch
+                {
+                    Debug.Log("no more items to load");
+                }
+            }
+            
         }
         foreach (KeyValuePair<int, Locations> entry in locationsDict)
         {
@@ -51,14 +58,44 @@ public class ObjectLoader : MonoBehaviour
             locationsList.Add(temp);
         }
         levelController.locationsList = locationsList;
-        sequencesToLoad.Remove(fileToLoad);
-        s = sequencesToLoad.ToArray();
-        if (s.Length != 0)
-        {
-            fileToLoad = s[0];
-        }
-    }
+        //sequencesToLoad.Remove(fileToLoad);
+        //s = sequencesToLoad.ToArray();
+        //if (s.Length != 0)
+        //{
+        //    fileToLoad = s[0];
+        //}
 
+        counter = 0;
+
+    }
+    public void WhichFileToLoad()
+    {
+        if (Parameters.startGeo)
+        {
+            //fileToLoad = sequencesToLoad.Find(x => x.Contains("LandSea"));
+            if(levelController.sequencesCompleted == 1)
+            {
+                fileToLoad = sequencesToLoad[2];
+            }
+            else if(levelController.sequencesCompleted == 2)
+            {
+                fileToLoad = sequencesToLoad[1];
+            }
+        }
+        else if (!Parameters.startGeo)
+        {
+            //fileToLoad = sequencesToLoad.Find(x => x.Contains("CoastUpDown"));
+            if (levelController.sequencesCompleted == 1)
+            {
+                fileToLoad = sequencesToLoad[1];
+            }
+            else if (levelController.sequencesCompleted == 2)
+            {
+                fileToLoad = sequencesToLoad[2];
+            }
+        }
+        levelController.axis = fileToLoad;
+    }
     public void LoadObject(string path)
     {
         string myLoadedLocation = JsonFileReader.LoadJsonAsResource(path);

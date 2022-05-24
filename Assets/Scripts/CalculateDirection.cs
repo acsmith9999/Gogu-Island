@@ -6,7 +6,7 @@ using UnityStandardAssets.Characters.FirstPerson;
 
 public class CalculateDirection : MonoBehaviour
 {
-    private FirstPersonController player;
+    public FirstPersonController player;
     private LevelController l;
     private SoundManager sm;
 
@@ -19,7 +19,7 @@ public class CalculateDirection : MonoBehaviour
     private Vector2 endPointV2, inlandtoV2, playerRef, targetRef;
 
     private AudioSource src;
-    public List<AudioClip> towardsGeo, awayGeo, towardsAbs, awayAbs;
+    public AudioDirections towardsGeo, awayGeo, towardsAbs, awayAbs;
     
     private int _numberOfDirections = 0;
     public int numberOfDirections 
@@ -29,19 +29,18 @@ public class CalculateDirection : MonoBehaviour
     }
 
     public List<GameDirection> gameDirections;
-    private Vector3 lastMousePosition;
-    private Vector3 newMousePosition;
     private Transform lastTransform;
-    private bool getMovement;
-    private bool getMouseMovement = false;
-    private bool getkeyStroke;
-    private bool directionHasResponse;
+    private bool getMovement, getMouseX, getMouseY, getKeyStroke;
+
     private string firstMovement;
-    private Transform newTransform;
     private Transform compareTransform;
     private float firstMouseX;
     private float firstMouseY;
     private GameDirection temp;
+    public List<Vector3> tl;
+    public List<MovementData> movementData;
+
+    private string currentSender, prevSender;
 
     private void Start()
     {
@@ -49,6 +48,9 @@ public class CalculateDirection : MonoBehaviour
         src = GetComponent<AudioSource>();
         l = FindObjectOfType<LevelController>();
         sm = FindObjectOfType<SoundManager>();
+        tl = new List<Vector3>();
+        movementData = new List<MovementData>();
+
 
         absoluteAnchor = GameObject.Find("absolute");
         geocentricAnchor = GameObject.Find("geocentric");
@@ -56,14 +58,14 @@ public class CalculateDirection : MonoBehaviour
         endPointV2 = new Vector2(absoluteAnchor.transform.position.x, absoluteAnchor.transform.position.z);
         inlandtoV2 = new Vector2(geocentricAnchor.transform.position.x, geocentricAnchor.transform.position.z);
 
-        if (MainMenu.wordList1)
+        if (Parameters.wordList1)
         {
             towardsGeo = sm.baki;
             awayGeo = sm.bago;
             towardsAbs = sm.duki;
             awayAbs = sm.dugo;
         }
-        else if (!MainMenu.wordList1)
+        else if (!Parameters.wordList1)
         {
             towardsGeo = sm.duki;
             awayGeo = sm.dugo;
@@ -74,70 +76,69 @@ public class CalculateDirection : MonoBehaviour
 
     public void GetDirection(int axes)
     {
-        //increase th counter for directions given
+        //increase the counter for directions given
         numberOfDirections++;
-        //calculate player and target position
+
+        //calculate player and target position ----- this is also under calculatedirection function
         playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
         targetRef = new Vector2(target.transform.position.x, target.transform.position.z);
-
         //distance from player to target
         targetToPlayer = Vector2.Distance(targetRef, playerRef);
-
         //Method calculates on one axis using transform
         if (axes == 1)
         {
-        if (l.axis.Contains("Land"))
-        {
-            //calculate distances between player target and geo ref
-            inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
-            inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
-        
-            //get cosine of angle geocentric ref
-            float cAngLand = (targetToPlayer * targetToPlayer + inlandToPlayer * inlandToPlayer - inlandToTarget * inlandToTarget) / (2 * targetToPlayer * inlandToPlayer);
-            //convert angle to radians
-            float rad2 = Mathf.Acos(cAngLand);
-            //convert radians to complementary angle
-            angle = Mathf.Rad2Deg * rad2; //this is the up/down angle
+            if (l.axis.Contains("Land"))
+            {
+                //calculate distances between player target and geo ref
+                inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+                inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
 
-            if (target.transform.position.x > player.transform.position.x)
-            {
-                int index = Random.Range(0, towardsGeo.Count);
-                src.PlayOneShot(towardsGeo[index]);
-                givenDirection = towardsGeo[index].name;
-            }
-            else
-            {
-                int index = Random.Range(0, awayGeo.Count);
-                src.PlayOneShot(awayGeo[index]);
-                givenDirection = awayGeo[index].name;
-            }
-        }
-        else if (l.axis.Contains("Coast"))
-        {
-            //calculate distances between player target and absolute ref
-            AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
-            refToTarget = Vector2.Distance(endPointV2, targetRef);
+                //get cosine of angle geocentric ref
+                float cAngLand = (targetToPlayer * targetToPlayer + inlandToPlayer * inlandToPlayer - inlandToTarget * inlandToTarget) / (2 * targetToPlayer * inlandToPlayer);
+                //convert angle to radians
+                float rad2 = Mathf.Acos(cAngLand);
+                //convert radians to complementary angle
+                angle = Mathf.Rad2Deg * rad2; //this is the up/down angle
 
-            //get cosine of angle absolute ref
-            float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
-            //convert angle to radians
-            float rad = Mathf.Acos(cAngSun);
-            //convert radians to complementary angle
-            angle = Mathf.Rad2Deg * rad; //this is the up/down angle
 
-            if (target.transform.position.z > player.transform.position.z)
-            {
-                int index = Random.Range(0, towardsAbs.Count);
-                src.PlayOneShot(towardsAbs[index]);
-                givenDirection = towardsAbs[index].name;
+                if (target.transform.position.x > player.transform.position.x)
+                {
+                    currentSender = towardsGeo.plain.name;
+                    DetermineAudio(towardsGeo);
+                }
+                else
+                {
+                    currentSender = awayGeo.plain.name;
+                    DetermineAudio(awayGeo);
+                }
+
             }
-            else
+            else if (l.axis.Contains("Coast"))
             {
-                int index = Random.Range(0, awayAbs.Count);
-                src.PlayOneShot(awayAbs[index]);
-                givenDirection = awayAbs[index].name;
+                //calculate distances between player target and absolute ref
+                AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+                refToTarget = Vector2.Distance(endPointV2, targetRef);
+
+                //get cosine of angle absolute ref
+                float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
+                //convert angle to radians
+                float rad = Mathf.Acos(cAngSun);
+                //convert radians to complementary angle
+                angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+
+                //determine direction
+                if (target.transform.position.z > player.transform.position.z)
+                {
+                    currentSender = towardsAbs.plain.name;
+                    DetermineAudio(towardsAbs);
+                }
+                else
+                {
+                    currentSender = awayAbs.plain.name;
+                    DetermineAudio(awayAbs);
+                }
             }
-        }
+
         }
         //Method compares two axes and returns direction up to 180 degrees
         else if (axes == 2)
@@ -160,68 +161,139 @@ public class CalculateDirection : MonoBehaviour
             //calculate which side of the object the player is on
             if (angle <= 60)
             {
-                int index = Random.Range(0, towardsGeo.Count);
-                src.PlayOneShot(towardsGeo[index]);
-                givenDirection = towardsGeo[index].name;
+                currentSender = towardsGeo.plain.name;
+                DetermineAudio(towardsGeo);
             }
             else if (angle > 120)
             {
-                int index = Random.Range(0, awayGeo.Count);
-                src.PlayOneShot(awayGeo[index]);
-                givenDirection = awayGeo[index].name;
+                currentSender = awayGeo.plain.name;
+                DetermineAudio(awayGeo);
             }
             else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
             {
-                int index = Random.Range(0, towardsAbs.Count);
-                src.PlayOneShot(towardsAbs[index]);
-                givenDirection = towardsAbs[index].name;
+                currentSender = towardsAbs.plain.name;
+                DetermineAudio(towardsAbs);
             }
             else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
             {
-                int index = Random.Range(0, awayAbs.Count);
-                src.PlayOneShot(awayAbs[index]);
-                givenDirection = awayAbs[index].name;
+                currentSender = awayAbs.plain.name;
+                DetermineAudio(awayAbs);
             }
         }
         else { Debug.Log("error calculating"); }
 
-        temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime);
+        
+
+        temp = new GameDirection(numberOfDirections, givenDirection, targetToPlayer, angle, l.trialTime, l.elapsedTime, new ResponseAction());
         gameDirections.Add(temp);
 
-        //Debug.Log(temp.id + " " + temp.direction + " " + temp.distanceToTarget + " " + temp.angleToTarget + " " + temp.timeElapsed);
-
         getMovement = true;
-        getMouseMovement = true;
-        getkeyStroke = true;
+        getKeyStroke = true;
+        getMouseX = true;
+        getMouseY = true;
+    }
+
+    private void DetermineAudio(AudioDirections audioClips)
+    {
+        //conditions to determine type of inflected audio
+        //check if previous exists for comparison of distance
+        if (numberOfDirections > 1)
+        {
+            //check if direction has changed
+            if(currentSender != prevSender)
+            {
+                //play plain
+                //uninflected
+                src.PlayOneShot(audioClips.plain);
+                givenDirection = audioClips.plain.name;
+            }
+            else
+            {
+                //closer or further with same direction
+                if (targetToPlayer < gameDirections.Last().distanceToTarget)
+                {
+                    Debug.Log("closer");
+                    //excited dir
+                    src.PlayOneShot(audioClips.gettingCloser);
+                    givenDirection = audioClips.gettingCloser.name;
+                }
+                else if (targetToPlayer > gameDirections.Last().distanceToTarget)
+                {
+                    Debug.Log("further");
+                    //emphasised dir
+                    src.PlayOneShot(audioClips.gettingFurther);
+                    givenDirection = audioClips.gettingFurther.name;
+                }
+                else
+                {
+                    Debug.Log("same");
+                    //neutral
+                    src.PlayOneShot(audioClips.plain);
+                    givenDirection = audioClips.plain.name;
+                }
+            } 
+        }
+        else if (numberOfDirections == 1)
+        {
+            //first direction of the trial / game
+            //uninflected
+            src.PlayOneShot(audioClips.plain);
+            givenDirection = audioClips.plain.name;
+        }
+        prevSender = audioClips.plain.name;
     }
 
     private void Update()
     {
+        if (src.isPlaying)
+        {
+            player.mouseLookEnabled = false;
+            player.GetComponent<CharacterController>().enabled = false;
+            player.m_UseHeadBob = false;
+            player.m_AudioSource.enabled = false;
+
+        }
+        else { player.mouseLookEnabled = true;
+            player.GetComponent<CharacterController>().enabled = true;
+            player.m_UseHeadBob = true;
+            player.m_AudioSource.enabled = true;
+        }
 
         if (getMovement)
-        {          
+        {
             lastTransform = player.transform;
-            gameDirections.Last().response = new ResponseAction();
 
-            if (Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0)
+            if (getMouseX)
             {
-                firstMouseX = Input.GetAxis("Mouse X");
-                firstMouseY = Input.GetAxis("Mouse Y");
-                gameDirections.Last().response.firstMouseX = firstMouseX;
-                gameDirections.Last().response.firstMouseY = firstMouseY;
-                getMouseMovement = false;
+                if (Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0)
+                {
+                    firstMouseX = Input.GetAxis("Mouse X");
+                    gameDirections.Last().response.firstMouseX = firstMouseX;
+                    getMouseX = false;
+                }
             }
 
-
-            if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
+            if (getMouseY)
             {
-                firstMovement = Input.inputString;
-                gameDirections.Last().response.firstKeyStroke = firstMovement;
-                getkeyStroke = false;
+                if(Input.GetAxis("Mouse Y") != 0)
+                {
+                    firstMouseY = Input.GetAxis("Mouse Y");
+                    gameDirections.Last().response.firstMouseY = firstMouseY;
+                    getMouseY = false;
+                }
             }
 
+            if (getKeyStroke)
+            {
+                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
+                {
+                    firstMovement = Input.inputString;
+                    gameDirections.Last().response.firstKeyStroke = firstMovement;
+                    getKeyStroke = false;
+                }
+            }
 
-            if (getMouseMovement==false && getkeyStroke == false)
+            if (getMouseX==false && getKeyStroke == false && getMouseY==false)
             {
                 StartCoroutine(getNewTransform());
                 getMovement = false;
@@ -229,8 +301,62 @@ public class CalculateDirection : MonoBehaviour
 
         }
 
-    }
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            ExportTrialData.ExportMovement(ExportTrialData.movements);
+        }
+        if(target == null)
+        {
+            getMovement = false;
+        }
 
+    }
+    private void FixedUpdate()
+    {
+        if (l.timer)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (!src.isPlaying)
+                {
+                    GetDirection(Parameters.numberOfAxes);
+                }
+                
+            }
+            //tl.Add(player.transform.position);
+
+            //calculate player and target position ----- this is also under calculatedirection function
+            if(target != null)
+            {
+                playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
+                targetRef = new Vector2(target.transform.position.x, target.transform.position.z);
+                //distance from player to target
+                targetToPlayer = Vector2.Distance(targetRef, playerRef);
+
+                //movementData.Add(new MovementData(player.transform.position, player.transform.eulerAngles.y, player.transform.GetChild(0).gameObject.transform.eulerAngles.x, l.trialNumber, l.elapsedTime, targetToPlayer));
+                ExportTrialData.movements.Add(new MovementData(player.transform.position, player.transform.eulerAngles.y, player.transform.GetChild(0).gameObject.transform.eulerAngles.x, l.trialNumber, l.elapsedTime, targetToPlayer));
+                if (ExportTrialData.movements.Count > 1)
+                {
+
+                    int closerFurther;
+                    if (targetToPlayer < ExportTrialData.movements[ExportTrialData.movements.Count-2].distance)
+                    {
+                        closerFurther = 1;
+                    }
+                    else if (targetToPlayer > ExportTrialData.movements[ExportTrialData.movements.Count - 2].distance)
+                    {
+                        closerFurther = -1;
+                    }
+                        else
+                    {
+                        closerFurther = 0;
+                    }
+                ExportTrialData.movements.Last().closerOrFurther = closerFurther;
+                }
+            }
+
+        }
+    }
     IEnumerator getNewTransform()
     {
         yield return new WaitForSeconds(1);
