@@ -36,11 +36,11 @@ public class Pickup : MonoBehaviour
     }
     public void CompleteTrial(bool success)
     {
-        //GetComponent<BoxCollider>().isTrigger = false;
+
         levelController.timer = false;
 
         List<GameDirection> g = new List<GameDirection>(c.gameDirections);
-        currentTrial = new TrialData(levelController.trialNumber, levelController.axis, c.numberOfDirections, levelController.trialTime, g, success);
+        currentTrial = new TrialData(levelController.trialNumber, levelController.sequencesCompleted, levelController.axis, c.numberOfDirections, levelController.trialTime, g, success);
         levelController.trialDatas.Add(currentTrial);
         ExportTrialData.trialDatas.Add(currentTrial);
         c.numberOfDirections = 0;
@@ -84,6 +84,7 @@ public class Pickup : MonoBehaviour
             }
             Destroy(this);
             levelController.SpawnPickup();
+            c.source = "Spawn";
             c.GetDirection(Parameters.numberOfAxes);
 
         }

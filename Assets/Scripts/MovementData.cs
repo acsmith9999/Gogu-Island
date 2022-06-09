@@ -7,7 +7,7 @@ public class MovementData
 {
     public Vector3 pos;
     //rotations?
-    public int currentTrial, closerOrFurther;
+    public int currentTrial, closerOrFurther, sequence;
     public float timeSinceStart, rotX, rotY, distance;
 
 
@@ -15,7 +15,7 @@ public class MovementData
     {
 
     }
-    public MovementData(Vector3 p, float x, float y, int c, float time, float dis)
+    public MovementData(Vector3 p, float x, float y, int c, float time, float dis, int seq)
     {
         pos = p;
         rotX = x;
@@ -23,5 +23,6 @@ public class MovementData
         currentTrial = c;
         timeSinceStart = time;
         distance = dis;
+        sequence = seq;
     }
 }

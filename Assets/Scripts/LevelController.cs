@@ -19,16 +19,18 @@ public class LevelController : MonoBehaviour
     private CalculateDirection calculateDirection;
     public List<Locations> locationsList;
 
-    public int trialNumber = 1;
+    public int trialNumber = 0;
     public int sequencesCompleted = 0;
     private bool geoFirstSeq;
 
     public string axis;
 
-    public GameObject geoBoundary, absBoundary;
+    public GameObject geoBoundary, absBoundary, tutTrigger;
 
     //export this
     public DataCollection trialDatas;
+
+    private Tutorial tut;
 
     // Start is called before the first frame update
     void Start()
@@ -36,7 +38,8 @@ public class LevelController : MonoBehaviour
         objectLoader = FindObjectOfType<ObjectLoader>();
         calculateDirection = FindObjectOfType<CalculateDirection>();
         trialDatas = new DataCollection();
-
+        tut = FindObjectOfType<Tutorial>();
+        tutTrigger.SetActive(false);
 
         geoFirstSeq = Parameters.startGeo;
         if (geoFirstSeq)
@@ -53,14 +56,14 @@ public class LevelController : MonoBehaviour
     void Update()
     {
         ////for use in testing
-        if (Input.GetKeyDown(KeyCode.Backspace))
-        {
-            objectLoader.AddObjectsToLists();
-        }
-        if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
-        {
-            SpawnTutorial();
-        }
+        //if (Input.GetKeyDown(KeyCode.Backspace))
+        //{
+        //    objectLoader.AddObjectsToLists();
+        //}
+        //if (Input.GetKeyDown(KeyCode.Return) && locationsList.Count > 0 && GameObject.FindGameObjectsWithTag("pickup").Length == 0)
+        //{
+        //    SpawnTutorial();
+        //}
 
         ////for use in testing
         //if (Input.GetKeyDown(KeyCode.Backspace))
@@ -88,6 +91,7 @@ public class LevelController : MonoBehaviour
         {
             ExportTrialData.ExportData(ExportTrialData.trialDatas);
         }
+
 
     }
     private void LateUpdate()
@@ -125,8 +129,11 @@ public class LevelController : MonoBehaviour
     {
         if (locationsList.Count > 0)
         {
+            trialTime = 0;
             timer = true;
+            trialNumber++;
             calculateDirection.target = Instantiate(tutorial, locationsList.ElementAt(0).location, Quaternion.identity);
+            calculateDirection.source = "TutorialSpawn";
             calculateDirection.GetDirection(Parameters.numberOfAxes);
             //camera to target 2s. fix this
             //PixelCrushers.DialogueSystem.DialogueManager.PlaySequence("Camera(Full Back,listener,1);Delay(2)", calculateDirection.target.transform, calculateDirection.target.transform);
@@ -153,6 +160,11 @@ public class LevelController : MonoBehaviour
         objectLoader.WhichFileToLoad();
         axis = objectLoader.fileToLoad;
     }
+
+    public void ReadyToStartTutorial()
+    {
+        tutTrigger.SetActive(true);
+    }
     public void TutorialFinished()
     {
         PixelCrushers.DialogueSystem.DialogueManager.StartConversation("TutorialFinished");
@@ -160,12 +172,8 @@ public class LevelController : MonoBehaviour
         trialNumber = 0;
         objectLoader.WhichFileToLoad();
         axis = objectLoader.fileToLoad;
+        tut.TutorialBoundaries();
     }
-
-    //private void OnApplicationQuit()
-    //{
-    //    ExportData();
-    //}
 
     public void Boundaries()
     {
