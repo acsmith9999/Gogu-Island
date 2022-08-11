@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Tutorial : MonoBehaviour
 {
-    public GameObject tutorialBoundaries;
+    public GameObject tutorialBoundaries, targetRing;
     private LevelController lc;
     private bool triggered = false;
     // Start is called before the first frame update
@@ -27,6 +27,7 @@ public class Tutorial : MonoBehaviour
         {
             if (other.CompareTag("Player"))
             {
+                targetRing.SetActive(false);
                 lc.SpawnTutorial();
                 triggered = true;
             }

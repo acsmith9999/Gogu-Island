@@ -6,24 +6,26 @@ using UnityEngine;
 public class GameDirection
 {
     public int id;
-    public string direction, source;
+    public string direction, landmark ,source;
     public float distanceToTarget, angleToTarget, timeElapsed, timeSinceStart;
     public ResponseAction response;
 
-    public GameDirection(int id, string src, string dir, float disToTar, float angleToTar, float timeElapsed)
+    public GameDirection(int id, string src, string dir, string lm, float disToTar, float angleToTar, float timeElapsed)
     {
         this.id = id;
         source = src;
         direction = dir;
+        landmark = lm;
         distanceToTarget = disToTar;
         angleToTarget = angleToTar;
         this.timeElapsed = timeElapsed;
     }
-    public GameDirection(int id, string src, string dir, float disToTar, float angleToTar, float timeElapsed, float timeSinceStart, ResponseAction r)
+    public GameDirection(int id, string src, string dir, string lm, float disToTar, float angleToTar, float timeElapsed, float timeSinceStart, ResponseAction r)
     {
         this.id = id;
         source = src;
         direction = dir;
+        landmark = lm;
         distanceToTarget = disToTar;
         angleToTarget = angleToTar;
         this.timeElapsed = timeElapsed;

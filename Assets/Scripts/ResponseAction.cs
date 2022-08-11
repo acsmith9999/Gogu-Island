@@ -9,6 +9,9 @@ public class ResponseAction
     public float firstMouseX; 
     public float firstMouseY;
 
+    public float keyOnsetTime;
+    public float mouseOnsetTime;
+
     public int directionRespondedTo;
 
     public ResponseAction()

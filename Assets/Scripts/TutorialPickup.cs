@@ -8,21 +8,34 @@ public class TutorialPickup : MonoBehaviour
     private LevelController levelController;
     private CalculateDirection c;
     private TrialData currentTrial;
+    ParticleSystem particleSystem;
+    private bool isColliding = false;
 
     private void Start()
     {
         sm = FindObjectOfType<SoundManager>();
         levelController = FindObjectOfType<LevelController>();
         c = FindObjectOfType<CalculateDirection>();
+        particleSystem = GetComponent<ParticleSystem>();
     }
 
     public void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
+            if (isColliding) return;
+            isColliding = true;
             levelController.timer = false;
             sm.src.PlayOneShot(sm.successSound);
+            particleSystem.Play();
 
+            Invoke("CompleteTrial", 2f);
+
+        }
+    }
+
+    private void CompleteTrial()
+    {
             List<GameDirection> g = new List<GameDirection>(c.gameDirections);
             currentTrial = new TrialData(levelController.trialNumber, levelController.sequencesCompleted, levelController.axis, c.numberOfDirections, levelController.trialTime, g, true);
             levelController.trialDatas.Add(currentTrial);
@@ -40,8 +53,8 @@ public class TutorialPickup : MonoBehaviour
             else
             {
                 Destroy(this.gameObject);
+                c.timeSinceLastDirection = 4;
                 levelController.SpawnTutorial();
             }
-        }
     }
 }

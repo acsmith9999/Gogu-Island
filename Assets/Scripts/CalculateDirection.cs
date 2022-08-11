@@ -14,13 +14,14 @@ public class CalculateDirection : MonoBehaviour
     private GameObject absoluteAnchor, geocentricAnchor;
     
     private string givenDirection;
-    private float targetToPlayer, AbsRefToPlayer, refToTarget, angle, inlandToPlayer, inlandToTarget, timeSinceLastDirection;
-    public float autoDirection;
+    private float targetToPlayer, AbsRefToPlayer, refToTarget, angle, inlandToPlayer, inlandToTarget;
+    public float autoDirection, timeSinceLastDirection;
 
     private Vector2 endPointV2, inlandtoV2, playerRef, targetRef;
 
     private AudioSource src;
     public AudioDirections towardsGeo, awayGeo, towardsAbs, awayAbs;
+    public AudioClip helpSound;
     
     private int _numberOfDirections = 0;
     public int numberOfDirections 
@@ -31,7 +32,7 @@ public class CalculateDirection : MonoBehaviour
 
     public List<GameDirection> gameDirections;
     private Transform lastTransform;
-    private bool getMovement, getMouseX, getMouseY, getKeyStroke;
+    private bool getMovement, getMouseX, getMouseY, getKeyStroke, disableMovement;
 
     private string firstMovement;
     private Transform compareTransform;
@@ -41,7 +42,7 @@ public class CalculateDirection : MonoBehaviour
     public List<Vector3> tl;
     public List<MovementData> movementData;
 
-    private string currentSender, prevSender;
+    private string currentSender, prevSender, landmark;
     public string source;
 
     private void Start()
@@ -53,7 +54,8 @@ public class CalculateDirection : MonoBehaviour
         tl = new List<Vector3>();
         movementData = new List<MovementData>();
 
-        timeSinceLastDirection = 0;
+        timeSinceLastDirection = 4;
+
 
         absoluteAnchor = GameObject.Find("absolute");
         geocentricAnchor = GameObject.Find("geocentric");
@@ -75,51 +77,91 @@ public class CalculateDirection : MonoBehaviour
             towardsAbs = sm.baki;
             awayAbs = sm.bago;
         }
+        helpSound = sm.helpSound;
     }
 
     public void GetDirection(int axes)
     {
         if (!src.isPlaying && target != null)
         {
-            //increase the counter for directions given
-            numberOfDirections++;
-
-            //calculate player and target position ----- this is also under calculatedirection function
-            playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
-            targetRef = new Vector2(target.transform.position.x, target.transform.position.z);
-            //distance from player to target
-            targetToPlayer = Vector2.Distance(targetRef, playerRef);
-            //Method calculates on one axis using transform
-            if (axes == 1)
+            //prevent soft lock on mouseover for directions
+            if(timeSinceLastDirection < 3f)
             {
-                if (l.axis.Contains("Land"))
+                return;
+            }
+            else
+            {
+                //increase the counter for directions given
+                numberOfDirections++;
+
+                //calculate player and target position ----- this is also under calculatedirection function
+                playerRef = new Vector2(player.transform.position.x, player.transform.position.z);
+                targetRef = new Vector2(target.transform.position.x, target.transform.position.z);
+                //distance from player to target
+                targetToPlayer = Vector2.Distance(targetRef, playerRef);
+                //Method calculates on one axis using transform
+                if (axes == 1)
+                {
+                    if (l.axis.Contains("Land"))
+                    {
+                        //calculate distances between player target and geo ref
+                        inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
+                        inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
+
+                        //get cosine of angle geocentric ref
+                        float cAngLand = (targetToPlayer * targetToPlayer + inlandToPlayer * inlandToPlayer - inlandToTarget * inlandToTarget) / (2 * targetToPlayer * inlandToPlayer);
+                        //convert angle to radians
+                        float rad2 = Mathf.Acos(cAngLand);
+                        //convert radians to complementary angle
+                        angle = Mathf.Rad2Deg * rad2; //this is the up/down angle
+
+
+                        if (target.transform.position.x > player.transform.position.x)
+                        {
+                            currentSender = towardsGeo.plain.name;
+                            DetermineAudio(towardsGeo);
+                        }
+                        else
+                        {
+                            currentSender = awayGeo.plain.name;
+                            DetermineAudio(awayGeo);
+                        }
+
+                    }
+                    else if (l.axis.Contains("Coast"))
+                    {
+                        //calculate distances between player target and absolute ref
+                        AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
+                        refToTarget = Vector2.Distance(endPointV2, targetRef);
+
+                        //get cosine of angle absolute ref
+                        float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
+                        //convert angle to radians
+                        float rad = Mathf.Acos(cAngSun);
+                        //convert radians to complementary angle
+                        angle = Mathf.Rad2Deg * rad; //this is the up/down angle
+
+                        //determine direction
+                        if (target.transform.position.z > player.transform.position.z)
+                        {
+                            currentSender = towardsAbs.plain.name;
+                            DetermineAudio(towardsAbs);
+                        }
+                        else
+                        {
+                            currentSender = awayAbs.plain.name;
+                            DetermineAudio(awayAbs);
+                        }
+                    }
+
+                }
+                //Method compares two axes and returns direction up to 180 degrees
+                else if (axes == 2)
                 {
                     //calculate distances between player target and geo ref
                     inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
                     inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
 
-                    //get cosine of angle geocentric ref
-                    float cAngLand = (targetToPlayer * targetToPlayer + inlandToPlayer * inlandToPlayer - inlandToTarget * inlandToTarget) / (2 * targetToPlayer * inlandToPlayer);
-                    //convert angle to radians
-                    float rad2 = Mathf.Acos(cAngLand);
-                    //convert radians to complementary angle
-                    angle = Mathf.Rad2Deg * rad2; //this is the up/down angle
-
-
-                    if (target.transform.position.x > player.transform.position.x)
-                    {
-                        currentSender = towardsGeo.plain.name;
-                        DetermineAudio(towardsGeo);
-                    }
-                    else
-                    {
-                        currentSender = awayGeo.plain.name;
-                        DetermineAudio(awayGeo);
-                    }
-
-                }
-                else if (l.axis.Contains("Coast"))
-                {
                     //calculate distances between player target and absolute ref
                     AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
                     refToTarget = Vector2.Distance(endPointV2, targetRef);
@@ -131,202 +173,130 @@ public class CalculateDirection : MonoBehaviour
                     //convert radians to complementary angle
                     angle = Mathf.Rad2Deg * rad; //this is the up/down angle
 
-                    //determine direction
-                    if (target.transform.position.z > player.transform.position.z)
+                    //calculate which side of the object the player is on
+                    if (angle <= 60)
+                    {
+                        currentSender = towardsGeo.plain.name;
+                        landmark = "upcoast";
+                        DetermineAudio(towardsGeo);
+                    }
+                    else if (angle > 120)
+                    {
+                        currentSender = awayGeo.plain.name;
+                        landmark = "downcoast";
+                        DetermineAudio(awayGeo);
+                    }
+                    else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
                     {
                         currentSender = towardsAbs.plain.name;
+                        landmark = "inland";
                         DetermineAudio(towardsAbs);
                     }
-                    else
+                    else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
                     {
                         currentSender = awayAbs.plain.name;
+                        landmark = "coastward";
                         DetermineAudio(awayAbs);
                     }
                 }
+                else { Debug.Log("error calculating"); }
 
+                temp = new GameDirection(numberOfDirections, source, givenDirection, landmark, targetToPlayer, angle, l.trialTime, l.elapsedTime, new ResponseAction());
+                gameDirections.Add(temp);
+
+                getMovement = true;
+                getKeyStroke = true;
+                getMouseX = true;
+                getMouseY = true;
+
+                timeSinceLastDirection = 0;
             }
-            //Method compares two axes and returns direction up to 180 degrees
-            else if (axes == 2)
-            {
-                //calculate distances between player target and geo ref
-                inlandToPlayer = Vector2.Distance(inlandtoV2, playerRef);
-                inlandToTarget = Vector2.Distance(inlandtoV2, targetRef);
 
-                //calculate distances between player target and absolute ref
-                AbsRefToPlayer = Vector2.Distance(endPointV2, playerRef);
-                refToTarget = Vector2.Distance(endPointV2, targetRef);
-
-                //get cosine of angle absolute ref
-                float cAngSun = (targetToPlayer * targetToPlayer + AbsRefToPlayer * AbsRefToPlayer - refToTarget * refToTarget) / (2 * targetToPlayer * AbsRefToPlayer);
-                //convert angle to radians
-                float rad = Mathf.Acos(cAngSun);
-                //convert radians to complementary angle
-                angle = Mathf.Rad2Deg * rad; //this is the up/down angle
-
-                //calculate which side of the object the player is on
-                if (angle <= 60)
-                {
-                    currentSender = towardsGeo.plain.name;
-                    DetermineAudio(towardsGeo);
-                }
-                else if (angle > 120)
-                {
-                    currentSender = awayGeo.plain.name;
-                    DetermineAudio(awayGeo);
-                }
-                else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
-                {
-                    currentSender = towardsAbs.plain.name;
-                    DetermineAudio(towardsAbs);
-                }
-                else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
-                {
-                    currentSender = awayAbs.plain.name;
-                    DetermineAudio(awayAbs);
-                }
-            }
-            else { Debug.Log("error calculating"); }
-
-            temp = new GameDirection(numberOfDirections, source, givenDirection, targetToPlayer, angle, l.trialTime, l.elapsedTime, new ResponseAction());
-            gameDirections.Add(temp);
-
-            getMovement = true;
-            getKeyStroke = true;
-            getMouseX = true;
-            getMouseY = true;
-
-            timeSinceLastDirection = 0;
         }
         else
         {
-            Debug.Log("No targets");
+            Debug.Log("Audio Cooldown");
         }
     }
+
 
     private void DetermineAudio(AudioDirections audioClips)
     {
-        //conditions to determine type of inflected audio
-        //check if previous exists for comparison of distance
-        if (numberOfDirections > 1)
+        if (Parameters.prosody == 0)
         {
-            //check if direction has changed
-            if(currentSender != prevSender)
+            StartCoroutine(playSounds(audioClips.plain));
+            givenDirection = audioClips.plain.name;
+            return;
+        }
+        else if(Parameters.prosody == 1)
+        {
+            //conditions to determine type of inflected audio
+            //check if previous exists for comparison of distance
+            if (numberOfDirections > 1)
             {
-                //play plain
-                //uninflected
-                src.PlayOneShot(audioClips.plain);
-                givenDirection = audioClips.plain.name;
-            }
-            else
-            {
-                //closer or further with same direction
-                if (targetToPlayer < gameDirections.Last().distanceToTarget)
+                //check if direction has changed
+                if(currentSender != prevSender)
                 {
-                    Debug.Log("closer");
-                    //excited dir
-                    src.PlayOneShot(audioClips.gettingCloser);
-                    givenDirection = audioClips.gettingCloser.name;
-                }
-                else if (targetToPlayer > gameDirections.Last().distanceToTarget)
-                {
-                    Debug.Log("further");
-                    //emphasised dir
-                    src.PlayOneShot(audioClips.gettingFurther);
-                    givenDirection = audioClips.gettingFurther.name;
+                    //play plain
+                    //uninflected
+                    //src.PlayOneShot(audioClips.plain);
+                    StartCoroutine(playSounds(audioClips.plain));
+                    givenDirection = audioClips.plain.name;
                 }
                 else
                 {
-                    Debug.Log("same");
-                    //neutral
-                    src.PlayOneShot(audioClips.plain);
-                    givenDirection = audioClips.plain.name;
-                }
-            } 
+                    //closer or further with same direction
+                    if (targetToPlayer < gameDirections.Last().distanceToTarget)
+                    {
+                        Debug.Log("closer");
+                        //excited dir
+                        StartCoroutine(playSounds(audioClips.gettingCloser));
+                        //src.PlayOneShot(audioClips.gettingCloser);
+                        givenDirection = audioClips.gettingCloser.name;
+                    }
+                    else if (targetToPlayer > gameDirections.Last().distanceToTarget)
+                    {
+                        Debug.Log("further");
+                        //emphasised dir
+                        StartCoroutine(playSounds(audioClips.gettingFurther));
+                        //src.PlayOneShot(audioClips.gettingFurther);
+                        givenDirection = audioClips.gettingFurther.name;
+                    }
+                    else
+                    {
+                        Debug.Log("same");
+                        //neutral
+                        StartCoroutine(playSounds(audioClips.plain));
+                        //src.PlayOneShot(audioClips.plain);
+                        givenDirection = audioClips.plain.name;
+                    }
+                } 
+            }
+            else if (numberOfDirections == 1)
+            {
+                //first direction of the trial / game
+                //uninflected
+                StartCoroutine(playSounds(audioClips.plain));
+                //src.PlayOneShot(audioClips.plain);
+                givenDirection = audioClips.plain.name;
+            }
         }
-        else if (numberOfDirections == 1)
-        {
-            //first direction of the trial / game
-            //uninflected
-            src.PlayOneShot(audioClips.plain);
-            givenDirection = audioClips.plain.name;
-        }
+        else { Debug.Log("error determining audio"); }
         prevSender = audioClips.plain.name;
+
     }
+
+    IEnumerator playSounds(AudioClip dir)
+    {
+        //DisableMovement();
+        src.PlayOneShot(helpSound);
+        yield return new WaitForSeconds(helpSound.length);
+        src.PlayOneShot(dir);
+        //EnableMovement();
+    }
+
 
     private void Update()
-    {
-        //lost key
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            player.transform.position = lostSpawn.transform.position;
-        }
-        if (src.isPlaying)
-        {
-            player.mouseLookEnabled = false;
-            player.GetComponent<CharacterController>().enabled = false;
-            player.m_UseHeadBob = false;
-            player.m_AudioSource.enabled = false;
-
-        }
-        else { player.mouseLookEnabled = true;
-            player.GetComponent<CharacterController>().enabled = true;
-            player.m_UseHeadBob = true;
-            player.m_AudioSource.enabled = true;
-        }
-
-        if (getMovement)
-        {
-            lastTransform = player.transform;
-
-            if (getMouseX)
-            {
-                if (Input.GetAxis("Mouse X") != 0 || Input.GetAxis("Mouse Y") != 0)
-                {
-                    firstMouseX = Input.GetAxis("Mouse X");
-                    gameDirections.Last().response.firstMouseX = firstMouseX;
-                    getMouseX = false;
-                }
-            }
-
-            if (getMouseY)
-            {
-                if(Input.GetAxis("Mouse Y") != 0)
-                {
-                    firstMouseY = Input.GetAxis("Mouse Y");
-                    gameDirections.Last().response.firstMouseY = firstMouseY;
-                    getMouseY = false;
-                }
-            }
-
-            if (getKeyStroke)
-            {
-                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
-                {
-                    firstMovement = Input.inputString;
-                    gameDirections.Last().response.firstKeyStroke = firstMovement;
-                    getKeyStroke = false;
-                }
-            }
-
-            if (getMouseX==false && getKeyStroke == false && getMouseY==false)
-            {
-                StartCoroutine(getNewTransform());
-                getMovement = false;
-            }
-
-        }
-
-        if (Input.GetKeyDown(KeyCode.Y))
-        {
-            ExportTrialData.ExportMovement(ExportTrialData.movements);
-        }
-        if(target == null)
-        {
-            getMovement = false;
-        }
-
-    }
-    private void FixedUpdate()
     {
         //Directions
         if(target != null)
@@ -336,13 +306,17 @@ public class CalculateDirection : MonoBehaviour
                 source = "Click";
                 GetDirection(Parameters.numberOfAxes);
             }
-            //player too far away or lost - ontriggerExit from prefab collider in tooFarFromTarget
-            
+            //player too far away or lost - ontriggerExit from prefab collider in tooFarFromTarget attached to child object of target
+
             //player collides with boundaries - in ontrigger function in boundarycollision script
+            //currently not active
 
             //more than 20s pass without directions - in next if statement where timer is on
 
             //player looks at gogu for help
+
+
+
 
             //NOT DONE YET when player starts moving?
         }
@@ -385,7 +359,109 @@ public class CalculateDirection : MonoBehaviour
                 GetDirection(Parameters.numberOfAxes);
             }
         }
+
+        //lost key
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            ReturnToStart();
+        }
+        if (src.isPlaying)
+        {
+            DisableMovement();
+        }
+        else
+        {
+            EnableMovement();
+        }
+
+        if (disableMovement == true)
+        {
+            DisableMovement();
+        }
+
+
+        //Export data if participant does not complete game
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            ExportTrialData.ExportMovement(ExportTrialData.movements);
+            ExportTrialData.ExportGaze(ExportTrialData.gazeDatas);
+            ExportTrialData.ExportData(ExportTrialData.trialDatas);
+
+        }
+        if(target == null)
+        {
+            getMovement = false;
+        }
+
     }
+    public void ReturnToStart()
+    {
+        player.transform.position = lostSpawn.transform.position;
+    }
+    private void DisableMovement()
+    {
+        player.mouseLookEnabled = false;
+        player.GetComponent<CharacterController>().enabled = false;
+        player.m_UseHeadBob = false;
+        player.m_AudioSource.enabled = false;
+    }
+    private void EnableMovement()
+    {
+        player.mouseLookEnabled = true;
+        player.GetComponent<CharacterController>().enabled = true;
+        player.m_UseHeadBob = true;
+        player.m_AudioSource.enabled = true;
+        disableMovement = false;
+    }
+    private void LateUpdate()
+    {
+        //wait until after audio stops to collect this data
+        if (getMovement && !src.isPlaying)
+        {
+            lastTransform = player.transform;
+
+            if (getMouseX)
+            {
+                if (Input.GetAxis("Mouse X") != 0)
+                {
+                    firstMouseX = Input.GetAxis("Mouse X");
+                    gameDirections.Last().response.firstMouseX = firstMouseX;
+                    gameDirections.Last().response.mouseOnsetTime = l.elapsedTime;
+                    getMouseX = false;
+                }
+            }
+
+            if (getMouseY)
+            {
+                if(Input.GetAxis("Mouse Y") != 0)
+                {
+                    firstMouseY = Input.GetAxis("Mouse Y");
+                    gameDirections.Last().response.firstMouseY = firstMouseY;
+                    getMouseY = false;
+                }
+            }
+
+            if (getKeyStroke)
+            {
+                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D))
+                {
+                    firstMovement = Input.inputString;
+                    gameDirections.Last().response.firstKeyStroke = firstMovement;
+                    gameDirections.Last().response.keyOnsetTime = l.elapsedTime;
+                    getKeyStroke = false;
+                    Debug.Log(firstMovement);
+                }
+            }
+
+            if (getMouseX==false && getKeyStroke == false && getMouseY==false)
+            {
+                StartCoroutine(getNewTransform());
+                getMovement = false;
+            }
+
+        }
+    }
+
     IEnumerator getNewTransform()
     {
         yield return new WaitForSeconds(1);

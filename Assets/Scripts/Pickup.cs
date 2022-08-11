@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ public class Pickup : MonoBehaviour
     private CheckIfMoving checkIfMoving;
     private bool isColliding = false;
     private int i = 0;
+    ParticleSystem particleSystem;
 
     private void Start()
     {
@@ -17,6 +19,7 @@ public class Pickup : MonoBehaviour
         c = FindObjectOfType<CalculateDirection>();
         sm = FindObjectOfType<SoundManager>();
         checkIfMoving = FindObjectOfType<CheckIfMoving>();
+        particleSystem = GetComponent<ParticleSystem>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -28,15 +31,14 @@ public class Pickup : MonoBehaviour
                 i++;
                 if (isColliding) return;
                 isColliding = true;
-                GetComponent<BoxCollider>().enabled = false;
+                sm.src.PlayOneShot(sm.successSound);
+                particleSystem.Play();
                 CompleteTrial(true);
-
             }
         }
     }
     public void CompleteTrial(bool success)
     {
-
         levelController.timer = false;
 
         List<GameDirection> g = new List<GameDirection>(c.gameDirections);
@@ -47,14 +49,11 @@ public class Pickup : MonoBehaviour
         c.gameDirections.Clear();
         levelController.trialTime = 0;
 
-        if (success)
+        if (!success)
         {
-            sm.src.PlayOneShot(sm.successSound);
-        }
-        else
-        { 
             sm.src.PlayOneShot(sm.failSound);
         }
+
 
         if (levelController.locationsList.Count == 0)
         {
@@ -63,13 +62,14 @@ public class Pickup : MonoBehaviour
             if (levelController.sequencesCompleted == 2)
             {
                 levelController.LoadNextSequence();
-                Destroy(this.gameObject);
+                Destroy(this.gameObject,2);
             }
             else if (levelController.sequencesCompleted == 3)
             {
                 //finish game
                 ExportTrialData.ExportData(ExportTrialData.trialDatas);
                 ExportTrialData.ExportMovement(ExportTrialData.movements);
+                ExportTrialData.ExportGaze(ExportTrialData.gazeDatas);
                 //load ending scene
                 FindObjectOfType<FadeInOut>().FadeToLevel("EndScene");
             }
@@ -78,15 +78,18 @@ public class Pickup : MonoBehaviour
         {
             checkIfMoving.timer = 3f;
 
-            foreach (GameObject pickup in GameObject.FindGameObjectsWithTag("pickup"))
-            {
-                Destroy(pickup);
-            }
-            Destroy(this);
-            levelController.SpawnPickup();
-            c.source = "Spawn";
-            c.GetDirection(Parameters.numberOfAxes);
-
+            //foreach (GameObject pickup in GameObject.FindGameObjectsWithTag("pickup"))
+            //{
+            //    Destroy(pickup);
+            //}
+            
+            Invoke("SpawnPickup",2f);
+            Destroy(this.gameObject,2);
         }
+    }
+
+    private void SpawnPickup()
+    {
+        levelController.SpawnPickup();
     }
 }

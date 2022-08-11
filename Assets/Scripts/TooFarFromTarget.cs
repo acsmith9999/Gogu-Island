@@ -19,4 +19,8 @@ public class TooFarFromTarget : MonoBehaviour
             c.GetDirection(Parameters.numberOfAxes);
         }
     }
+    private void OnTriggerStay(Collider other)
+    {
+        //TODO - Directions if player remains too far away
+    }
 }

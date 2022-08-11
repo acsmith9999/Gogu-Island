@@ -5,7 +5,7 @@ public class SoundManager: MonoBehaviour
 {
     public AudioSource src;
     //public List<AudioClip> baki, bago, duki, dugo;
-    public AudioClip successSound, failSound;
+    public AudioClip successSound, failSound, helpSound;
     public AudioDirections baki, bago, duki, dugo;
 
     private void Awake()
@@ -30,14 +30,22 @@ public class SoundManager: MonoBehaviour
         //dugo.Add((AudioClip)Resources.Load("Sounds/Bridget/Dugo3"));
         //dugo.Add((AudioClip)Resources.Load("Sounds/Bridget/Dugo4"));
 
-        successSound = (AudioClip)Resources.Load("Sounds/Success");
-        failSound = (AudioClip)Resources.Load("Sounds/Fail");
-        
+        //successSound = (AudioClip)Resources.Load("Sounds/Success");
+        //failSound = (AudioClip)Resources.Load("Sounds/Fail");
+
     }
     private void Start()
     {
         src = GetComponent<AudioSource>();
-
+        if(Parameters.helpGender == 0)
+        {
+            helpSound = (AudioClip)Resources.Load("Sounds/MaleHelp");
+        }
+        else if(Parameters.helpGender == 1)
+        {
+            helpSound = (AudioClip)Resources.Load("Sounds/FemaleHelp");
+        }
+        else { Debug.Log("no help gender specified"); }
 
     }
 }

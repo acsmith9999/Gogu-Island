@@ -12,7 +12,7 @@ public  class MainMenu : MonoBehaviour
     private void Start()
     {
         instructions.enabled = false;
-        lengthText.text = "15";
+        lengthText.text = "default";
     }
     public static void NewGameStart()
     {
@@ -39,7 +39,22 @@ public  class MainMenu : MonoBehaviour
     {
         Parameters.startGeo = false;
     }
-
+    public void MaleVoice()
+    {
+        Parameters.helpGender = 0;
+    }
+    public void FemaleVoice()
+    {
+        Parameters.helpGender = 1;
+    }
+    public void PlainProsody()
+    {
+        Parameters.prosody = 0;
+    }
+    public void InflectedProsody()
+    {
+        Parameters.prosody = 1;
+    }
     public void HowToPlay()
     {
         instructions.enabled = true;

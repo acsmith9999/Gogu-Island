@@ -12,6 +12,7 @@ public class LevelController : MonoBehaviour
     public GameObject pickup, example, tutorial, exampleSpawn;
 
     public bool timer = false;
+    public bool tutorialActive;
     public float elapsedTime = 0;
     public float trialTime = 0;
 
@@ -87,10 +88,7 @@ public class LevelController : MonoBehaviour
             trialTime += Time.deltaTime;
             
         }
-        if (Input.GetKeyDown(KeyCode.G))
-        {
-            ExportTrialData.ExportData(ExportTrialData.trialDatas);
-        }
+
 
 
     }
@@ -116,7 +114,10 @@ public class LevelController : MonoBehaviour
 
             //int index = UnityEngine.Random.Range(0, locationsList.Count);
             calculateDirection.target = Instantiate(pickup, locationsList.ElementAt(0).location, Quaternion.identity);
-            
+            calculateDirection.source = "Spawn";
+            calculateDirection.timeSinceLastDirection = 4;
+            calculateDirection.GetDirection(Parameters.numberOfAxes);
+
             locationsList.RemoveAt(0);
         }
         else { Debug.Log("No more locations to spawn"); }
@@ -164,6 +165,7 @@ public class LevelController : MonoBehaviour
     public void ReadyToStartTutorial()
     {
         tutTrigger.SetActive(true);
+        tutorialActive = true;
     }
     public void TutorialFinished()
     {
@@ -173,6 +175,7 @@ public class LevelController : MonoBehaviour
         objectLoader.WhichFileToLoad();
         axis = objectLoader.fileToLoad;
         tut.TutorialBoundaries();
+        tutorialActive = false;
     }
 
     public void Boundaries()
