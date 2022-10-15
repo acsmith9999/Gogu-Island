@@ -37,15 +37,15 @@ public class SoundManager: MonoBehaviour
     private void Start()
     {
         src = GetComponent<AudioSource>();
-        if(Parameters.helpGender == 0)
-        {
-            helpSound = (AudioClip)Resources.Load("Sounds/MaleHelp");
-        }
-        else if(Parameters.helpGender == 1)
-        {
-            helpSound = (AudioClip)Resources.Load("Sounds/FemaleHelp");
-        }
-        else { Debug.Log("no help gender specified"); }
-
+        //if(Parameters.helpGender == 0)
+        //{
+        //    helpSound = (AudioClip)Resources.Load("Sounds/MaleHelp");
+        //}
+        //else if(Parameters.helpGender == 1)
+        //{
+        //    helpSound = (AudioClip)Resources.Load("Sounds/FemaleHelp");
+        //}
+        //else { Debug.Log("no help gender specified"); }
+        helpSound = (AudioClip)Resources.Load("Sounds/Ga");
     }
 }

@@ -154,12 +154,21 @@ public class LevelController : MonoBehaviour
     }
     public void LoadNextSequence()
     {
-        PixelCrushers.DialogueSystem.DialogueManager.StartConversation("RobOnSequenceEnd");
+
+        StartCoroutine(Wait2Seconds());
+        
+        //PixelCrushers.DialogueSystem.DialogueManager.StartConversation("RobOnSequenceEnd");
+        PixelCrushers.DialogueSystem.DialogueManager.StartConversation("Bob2");
         DialogueLua.SetVariable("GameFinished", true);
         DialogueLua.SetVariable("IsGeo", !geoFirstSeq);
         trialNumber = 0;
         objectLoader.WhichFileToLoad();
         axis = objectLoader.fileToLoad;
+    }
+    private IEnumerator Wait2Seconds()
+    {
+        yield return new WaitForSeconds(2);
+        calculateDirection.ReturnToStart();
     }
 
     public void ReadyToStartTutorial()

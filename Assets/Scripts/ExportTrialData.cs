@@ -67,7 +67,12 @@ public static class ExportTrialData
             Directory.CreateDirectory(Application.streamingAssetsPath + "/Export");
         }
         string path = Application.streamingAssetsPath + "\\Export\\";
-        string exportFile = (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
+        if (!Directory.Exists(path + Parameters.participantNo))
+        {
+            Directory.CreateDirectory(Application.streamingAssetsPath + "/Export/" + Parameters.participantNo);
+        }
+        path = path + $"\\{Parameters.participantNo}\\";
+        string exportFile = Parameters.participantNo + " " +(DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
         string exportPath = path + exportFile + "trial-records.csv";
         ExportTrialData.WriteTrials(exportPath, trialDatas);
 
@@ -87,7 +92,12 @@ public static class ExportTrialData
             Directory.CreateDirectory(Application.streamingAssetsPath + "/Export");
         }
         string path = Application.streamingAssetsPath + "\\Export\\";
-        string exportFile = (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
+        if (!Directory.Exists(path + Parameters.participantNo))
+        {
+            Directory.CreateDirectory(Application.streamingAssetsPath + "/Export" + "/" + Parameters.participantNo);
+        }
+        path = path + $"\\{Parameters.participantNo}\\";
+        string exportFile = Parameters.participantNo + " " + (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
         string exportPath = path + exportFile + "-movement.csv";
         ExportTrialData.WriteMovement(exportPath, movement);
 
@@ -163,7 +173,12 @@ public static class ExportTrialData
             Directory.CreateDirectory(Application.streamingAssetsPath + "/Export");
         }
         string path = Application.streamingAssetsPath + "\\Export\\";
-        string exportFile = (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
+        if (!Directory.Exists(path + Parameters.participantNo))
+        {
+            Directory.CreateDirectory(Application.streamingAssetsPath + "/Export" + "/" + Parameters.participantNo);
+        }
+        path = path + $"\\{Parameters.participantNo}\\";
+        string exportFile = Parameters.participantNo + " " + (DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")).ToString();
         string exportPath = path + exportFile + "-gaze.csv";
         ExportTrialData.WriteGaze(exportPath, gaze);
     }
@@ -175,15 +190,26 @@ public static class ExportTrialData
         tw.Close();
 
         tw = new StreamWriter(file, true);
-        tw.WriteLine("Time since trial start, AOI, gazeX, gazeY, gazeZ");
+        tw.WriteLine("Participant No., Time since trial start, AOI, gazeHitX, gazeHitY, gazeHitZ, rayOriginX, rayOriginY, rayOriginZ, rayDirX, rayDirY, rayDirZ, gazeScreenX, gazeScreenY, combinedX, combinedY");
         for (int i = 0; i < gaze.Count; i++)
         {
-            tw.WriteLine(gaze[i].TimeStamp + ","
-                + gaze[i].AOI + ",");
-                //+ gaze[i].gazeCoordinates.x + ","
-                //+ gaze[i].gazeCoordinates.y + ","
-                //+ gaze[i].gazeCoordinates.z);
-        }
+            tw.WriteLine(Parameters.participantNo + ","
+                + gaze[i].TimeStamp + ","
+                + gaze[i].AOI + ","
+                + gaze[i].gazeGameCoordinates.x + ","
+                + gaze[i].gazeGameCoordinates.y + ","
+                + gaze[i].gazeGameCoordinates.z + ","
+                + gaze[i].combinedGazeRayScreen.origin.x + ","
+                + gaze[i].combinedGazeRayScreen.origin.y + ","
+                + gaze[i].combinedGazeRayScreen.origin.z + ","
+                + gaze[i].combinedGazeRayScreen.direction.x + ","
+                + gaze[i].combinedGazeRayScreen.direction.y + ","
+                + gaze[i].combinedGazeRayScreen.direction.z + ","
+                + gaze[i].gazeScreenCoordinates.x + ","
+                + gaze[i].gazeScreenCoordinates.y + ","
+                + gaze[i].combinedPoint.x + ","
+                + gaze[i].combinedPoint.y);
+    }
 
         tw.Close();
     }

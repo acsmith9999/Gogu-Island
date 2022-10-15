@@ -1,0 +1,7 @@
+{
+  "locations": [
+    "Locations/Tutorial.json",
+    "Locations/CoastUpDown.json",
+    "Locations/LandSea.json"
+  ]
+}

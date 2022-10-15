@@ -61,8 +61,8 @@ public class Pickup : MonoBehaviour
             levelController.sequencesCompleted++;
             if (levelController.sequencesCompleted == 2)
             {
-                levelController.LoadNextSequence();
                 Destroy(this.gameObject,2);
+                levelController.LoadNextSequence();
             }
             else if (levelController.sequencesCompleted == 3)
             {

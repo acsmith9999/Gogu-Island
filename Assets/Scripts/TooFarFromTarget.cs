@@ -9,6 +9,7 @@ public class TooFarFromTarget : MonoBehaviour
     void Start()
     {
         c = FindObjectOfType<CalculateDirection>();
+        this.gameObject.GetComponent<CapsuleCollider>().radius = Parameters.targetRadius;
     }
 
     private void OnTriggerExit(Collider other)
@@ -21,6 +22,10 @@ public class TooFarFromTarget : MonoBehaviour
     }
     private void OnTriggerStay(Collider other)
     {
-        //TODO - Directions if player remains too far away
+        if (c.timeSinceLastDirection <= 0)
+        {
+            c.source = "Too far";
+            c.GetDirection(Parameters.numberOfAxes);
+        }
     }
 }

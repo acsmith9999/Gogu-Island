@@ -189,13 +189,13 @@ public class CalculateDirection : MonoBehaviour
                     else if (angle > 60 && angle <= 120 && inlandToPlayer < inlandToTarget)
                     {
                         currentSender = towardsAbs.plain.name;
-                        landmark = "inland";
+                        landmark = "coastward";
                         DetermineAudio(towardsAbs);
                     }
                     else if (angle > 60 && angle <= 180 && inlandToPlayer > inlandToTarget)
                     {
                         currentSender = awayAbs.plain.name;
-                        landmark = "coastward";
+                        landmark = "inland";
                         DetermineAudio(awayAbs);
                     }
                 }
@@ -228,6 +228,7 @@ public class CalculateDirection : MonoBehaviour
             givenDirection = audioClips.plain.name;
             return;
         }
+        //This will need to change for expt 2
         else if(Parameters.prosody == 1)
         {
             //conditions to determine type of inflected audio

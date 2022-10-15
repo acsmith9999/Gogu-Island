@@ -47,7 +47,8 @@ public class Pause : MonoBehaviour
     void PauseGame()
     {
         pauseMenuUI.SetActive(true);
-        StartCoroutine(ScaleTime(1.0f, 0.0f, 0.5f));
+        //StartCoroutine(ScaleTime(1.0f, 0.0f, 0.5f));
+        Time.timeScale = 0f;
         gamePaused = true;
 
         //cursor.enabled = true;
